@@ -1,0 +1,49 @@
+{
+    "name": "@ts-core/backend",
+    "version": "1.0.22",
+    "description": "Classes and utils for backend",
+    "main": "index.js",
+    "scripts": {},
+    "author": {
+        "name": "Renat Gubaev",
+        "email": "renat.gubaev@gmail.com"
+    },
+    "license": "ISC",
+    "dependencies": {
+        "@ts-core/common": "^1.0.148",
+        "@types/amqplib": "0.5.13",
+        "@types/cache-manager": "2.10.0",
+        "@types/node": "12.12.18",
+        "amqplib": "0.5.5",
+        "cache-manager": "2.10.1",
+        "cli-spinner": "0.2.10",
+        "dotenv": "8.2.0",
+        "node-fetch": "2.6.0",
+        "typeorm": "0.2.21",
+        "util": "0.12.1"
+    },
+    "devDependencies": {
+        "@types/node": "12.12.18",
+        "gulp": "4.0.2",
+        "gulp-clean": "0.4.0",
+        "gulp-typescript": "5.0.1",
+        "del": "5.1.0",
+        "gulp-clean-dir": "1.0.2",
+        "gulp-debug": "4.0.0",
+        "gulp-run-command": "0.0.10",
+        "prettier": "1.19.1",
+        "typescript": "3.4.5",
+        "ts-node": "8.6.2"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ManhattanDoctor/ts-core-backend.git"
+    },
+    "keywords": [
+        "typescript"
+    ],
+    "bugs": {
+        "url": "https://github.com/ManhattanDoctor/ts-core-backend/issues"
+    },
+    "homepage": "https://github.com/ManhattanDoctor/ts-core-backend#readme"
+}
