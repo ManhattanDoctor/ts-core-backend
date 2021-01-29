@@ -89,7 +89,9 @@ const packageUpdateDependencies = async (): Promise<void> => {
 };
 
 const packageCommit = async (): Promise<void> => {
-    await run(`git commit -a -m "auto commit"`)();
+    try {
+        await run(`git commit -a -m "auto commit"`)();
+    } catch (error) {}
 };
 
 const packageBuild = async (): Promise<void> => {
