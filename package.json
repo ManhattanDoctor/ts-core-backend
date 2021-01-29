@@ -1,6 +1,6 @@
 {
     "name": "@ts-core/backend",
-    "version": "1.0.22",
+    "version": "1.0.23",
     "description": "Classes and utils for backend",
     "main": "index.js",
     "scripts": {},
