@@ -22,9 +22,9 @@ export class TransportAmqpEventPayload<U = any> implements ITransportEvent<U> {
             throw new TransportInvalidDataError(`Invalid payload: ${error.message}`, content);
         }
 
-        let payload = TransformUtil.toClass(TransportAmqpEventPayload, data);
+        let payload = TransformUtil.toClass<TransportAmqpEventPayload<U>>(TransportAmqpEventPayload, data);
         ValidateUtil.validate(payload);
-        return new TransportEvent(payload.name, payload.data, payload.uid) as any;
+        return new TransportEvent(payload.name, payload.data, payload.uid);
     }
 
     // --------------------------------------------------------------------------

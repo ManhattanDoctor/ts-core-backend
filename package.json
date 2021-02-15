@@ -2,7 +2,6 @@
     "name": "@ts-core/backend",
     "version": "1.0.34",
     "description": "Classes and utils for backend",
-    "main": "index.js",
     "scripts": {},
     "author": {
         "name": "Renat Gubaev",
