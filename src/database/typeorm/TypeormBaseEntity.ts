@@ -25,7 +25,7 @@ export class TypeormBaseEntity<T = any> extends BaseEntity {
         let item = repository.createQueryBuilder(this['alias'] || _.camelCase(this.name));
         return new TypeormSelectQueryBuilder(item);
     }
-    
+
     // --------------------------------------------------------------------------
     //
     //  Protected Methods

@@ -24,7 +24,7 @@ export class TransportAmqpEventPayload<U = any> implements ITransportEvent<U> {
 
         let payload = TransformUtil.toClass(TransportAmqpEventPayload, data);
         ValidateUtil.validate(payload);
-        return new TransportEvent(payload.name, payload.data, payload.uid);
+        return new TransportEvent(payload.name, payload.data, payload.uid) as any;
     }
 
     // --------------------------------------------------------------------------
