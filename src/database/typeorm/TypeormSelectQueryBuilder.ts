@@ -49,14 +49,18 @@ export class TypeormSelectQueryBuilder<T> extends SelectQueryBuilder<T> {
 
     public with(...relations: Array<string>): TypeormSelectQueryBuilder<T> {
         const name = this.expressionMap.mainAlias.metadata.targetName;
-        const entity = getRepository(name).target;
-        const customRelations = entity['customRelations'] || [];
-
         for (let item of relations) {
-            // add nested relations support
-            if (item.includes('.')) {
-                //const [relation, subrelation] = name.split('.');
-                this.leftJoinAndSelect(item, _.camelCase(item));
+            if (name.includes('.')) {
+                let items = name.split('.');
+
+                this.leftJoinAndSelect(`${this.alias}.${items[0]}`, `${items[0]}`);
+                for (let i = 0; i < items.length - 1; i++) {
+                    let name = items[i];
+                    let alias = items[i + 1];
+                    if (!_.isEmpty(name) && !_.isEmpty(alias)) {
+                        this.innerJoinAndSelect(`${name}.${alias}`, alias);
+                    }
+                }
                 continue;
             }
 
@@ -65,18 +69,6 @@ export class TypeormSelectQueryBuilder<T> extends SelectQueryBuilder<T> {
                 continue;
             }
 
-            if (customRelations[item]) {
-                const relation = customRelations[item];
-                if (relation.type === 'one') {
-                    this.leftJoinAndMapOne(`${this.alias}.${item}`, relation.entity, item, relation.condition, relation.parameters);
-                    continue;
-                }
-                if (relation.type === 'many') {
-                    this.leftJoinAndMapMany(`${this.alias}.${item}`, relation.entity, item, relation.condition, relation.parameters);
-                    continue;
-                }
-                throw new ExtendedError(`Unknown relation type ${relation.type}`);
-            }
             throw new ExtendedError(`Relation ${item} doesn't exists`);
         }
         return this;

@@ -3,8 +3,9 @@ import { BaseEntity, BeforeInsert, BeforeUpdate, ObjectType } from 'typeorm';
 import { validateOrReject } from 'class-validator';
 import { getConnection } from 'typeorm';
 import { TypeormSelectQueryBuilder } from './TypeormSelectQueryBuilder';
+import { ClassTransformOptions, classToPlain } from 'class-transformer';
 
-export class TypeormBaseEntity extends BaseEntity {
+export class TypeormBaseEntity<T = any> extends BaseEntity {
     // --------------------------------------------------------------------------
     //
     //  Static Properties
@@ -24,7 +25,7 @@ export class TypeormBaseEntity extends BaseEntity {
         let item = repository.createQueryBuilder(this['alias'] || _.camelCase(this.name));
         return new TypeormSelectQueryBuilder(item);
     }
-
+    
     // --------------------------------------------------------------------------
     //
     //  Protected Methods
@@ -58,5 +59,12 @@ export class TypeormBaseEntity extends BaseEntity {
         let entity: BaseEntity = await base.getRepository().findOneOrFail(base.getId(this), { relations });
         let properties = Object.keys(base.getRepository()['metadata'].propertiesMap);
         this.copyProperties(entity, properties);
+    }
+
+    public toObject(options?: ClassTransformOptions): T {
+        if (_.isNil(options)) {
+            options = { excludePrefixes: ['__'] };
+        }
+        return classToPlain(this, options) as T;
     }
 }
