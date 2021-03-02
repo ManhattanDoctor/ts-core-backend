@@ -121,12 +121,8 @@ export class TypeormUtil {
         let pages = Math.ceil(total / params.pageSize);
 
         let many = await query.getMany();
-        let items: Array<V> = [];
-        for (let item of many) {
-            items.push(await transform(item));
-        }
-
-        return { pages, total, items, pageSize: params.pageSize, pageIndex: params.pageIndex };
+        let items = await Promise.all(many.map(item => transform(item)));
+        return { items, pages, total, pageSize: params.pageSize, pageIndex: params.pageIndex };
     }
 
     // --------------------------------------------------------------------------
