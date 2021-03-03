@@ -125,6 +125,14 @@ export class TypeormUtil {
         return { items, pages, total, pageSize: params.pageSize, pageIndex: params.pageIndex };
     }
 
+    public static async toFilterable<U, V, T>(query: SelectQueryBuilder<U>, params: IFilterable<T>, transform: (item: U) => Promise<V>): Promise<Array<V>> {
+        query = TypeormUtil.applyFilters(query, params);
+
+        let many = await query.getMany();
+        let items = await Promise.all(many.map(item => transform(item)));
+        return items;
+    }
+
     // --------------------------------------------------------------------------
     //
     //  Public Static Methods
