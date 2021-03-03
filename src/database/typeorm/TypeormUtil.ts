@@ -171,7 +171,7 @@ export class TypeormUtil {
     }
 
     public static async validateEntity(entity: any, options?: ValidatorOptions): Promise<void> {
-        await validateOrReject(entity, options);
+        return validateOrReject(entity, options);
     }
 
     // --------------------------------------------------------------------------
