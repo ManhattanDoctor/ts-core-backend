@@ -46,6 +46,7 @@ export abstract class DefaultController<U, V> extends LoggerWrapper {
         return { validationError: { target: false } };
     }
 
+    
     protected async validateResponse(value: V): Promise<V> {
         let items: Array<ValidationError> = await validate(value, this.validatorOptions);
         if (!_.isEmpty(items)) {
