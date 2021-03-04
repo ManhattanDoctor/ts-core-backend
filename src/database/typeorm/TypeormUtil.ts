@@ -129,8 +129,7 @@ export class TypeormUtil {
         query = TypeormUtil.applyFilters(query, params);
 
         let many = await query.getMany();
-        let items = await Promise.all(many.map(item => transform(item)));
-        return items;
+        return Promise.all(many.map(item => transform(item)));
     }
 
     // --------------------------------------------------------------------------

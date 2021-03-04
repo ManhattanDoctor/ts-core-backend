@@ -232,6 +232,17 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
 
     // --------------------------------------------------------------------------
     //
+    //  Custom Methods
+    //
+    // --------------------------------------------------------------------------
+
+    public async purge(command: string): Promise<number> {
+        let result = await this.channel.purgeQueue(this.createQueueName(command));
+        return result.messageCount;
+    }
+
+    // --------------------------------------------------------------------------
+    //
     //  Send Methods
     //
     // --------------------------------------------------------------------------
