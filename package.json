@@ -9,7 +9,7 @@
     },
     "license": "ISC",
     "dependencies": {
-        "@ts-core/common": "^1.0.160",
+        "@ts-core/common": "^1.0.164",
         "@types/amqplib": "0.5.13",
         "@types/cache-manager": "2.10.0",
         "@types/node": "12.12.18",

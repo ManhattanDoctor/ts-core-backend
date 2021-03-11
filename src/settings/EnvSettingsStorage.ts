@@ -12,23 +12,26 @@ export class EnvSettingsStorage extends AbstractSettingsStorage implements IMode
 
     constructor(fileName: string = '.env') {
         super();
+        this.envFileLoad(fileName);
+    }
 
+    // --------------------------------------------------------------------------
+    //
+    //  Protected Methods
+    //
+    // --------------------------------------------------------------------------
+
+    protected envFileLoad(fileName: string): void {
         try {
-            this.data = dotenv.parse(fs.readFileSync(fileName));
+            this._data = dotenv.parse(fs.readFileSync(fileName));
         } catch (error) {
-            this.data = {};
+            this._data = {};
         } finally {
             this.envInitializedHandler();
         }
     }
 
-    // --------------------------------------------------------------------------
-    //
-    //  Private Properties
-    //
-    // --------------------------------------------------------------------------
-
-    protected getPrefferedValue<T>(name: string): T {
+    protected getPreferredValue<T>(name: string): T {
         return process.env[name] as any;
     }
 
