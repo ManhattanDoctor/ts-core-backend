@@ -6,6 +6,14 @@ import { IModeSettings, Mode } from './IModeSettings';
 export class EnvSettingsStorage extends AbstractSettingsStorage implements IModeSettings {
     // --------------------------------------------------------------------------
     //
+    //  Properties
+    //
+    // --------------------------------------------------------------------------
+
+    protected _fileName: string;
+
+    // --------------------------------------------------------------------------
+    //
     //  Constructor
     //
     // --------------------------------------------------------------------------
@@ -22,6 +30,7 @@ export class EnvSettingsStorage extends AbstractSettingsStorage implements IMode
     // --------------------------------------------------------------------------
 
     protected envFileLoad(fileName: string): void {
+        this._fileName = fileName;
         try {
             this._data = dotenv.parse(fs.readFileSync(fileName));
         } catch (error) {
@@ -53,6 +62,10 @@ export class EnvSettingsStorage extends AbstractSettingsStorage implements IMode
 
     public get mode(): Mode {
         return this.getValue('NODE_ENV');
+    }
+
+    public get fileName(): string {
+        return this._fileName;
     }
 
     public get isTesting(): boolean {
