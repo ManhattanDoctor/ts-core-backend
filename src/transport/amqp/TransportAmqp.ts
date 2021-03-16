@@ -602,6 +602,10 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
     //
     // --------------------------------------------------------------------------
 
+    public getChannel(): Channel {
+        return this.channel;
+    }
+
     protected get channel(): Channel {
         return this._channel;
     }
