@@ -17,7 +17,7 @@ import {
 import { TransportWaitExceedError } from '@ts-core/common/transport/error';
 import { DateUtil, ObjectUtil, TransformUtil } from '@ts-core/common/util';
 import * as amqp from 'amqplib';
-import { Channel, Connection, Message } from 'amqplib';
+import { Channel, Replies, Connection, Message } from 'amqplib';
 import * as _ from 'lodash';
 import { Observable } from 'rxjs';
 import * as uuid from 'uuid';
@@ -236,9 +236,12 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
     //
     // --------------------------------------------------------------------------
 
-    public async purge(command: string): Promise<number> {
-        let result = await this.channel.purgeQueue(this.createQueueName(command));
-        return result.messageCount;
+    public async purge(command: string): Promise<Replies.PurgeQueue> {
+        return this.channel.purgeQueue(this.createQueueName(command));
+    }
+
+    public async check(command: string): Promise<Replies.AssertQueue> {
+        return this.channel.checkQueue(this.createQueueName(command));
     }
 
     // --------------------------------------------------------------------------
@@ -321,7 +324,7 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
 
     // --------------------------------------------------------------------------
     //
-    //  Recevie Methods
+    //  Receive Methods
     //
     // --------------------------------------------------------------------------
 
@@ -335,7 +338,7 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
 
     // --------------------------------------------------------------------------
     //
-    //  Recevie Message Methods
+    //  Receive Message Methods
     //
     // --------------------------------------------------------------------------
 
