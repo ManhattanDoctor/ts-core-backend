@@ -5,6 +5,7 @@ import { getConnection } from 'typeorm';
 import { TypeormSelectQueryBuilder } from './TypeormSelectQueryBuilder';
 import { ClassTransformOptions, classToPlain } from 'class-transformer';
 
+
 export class TypeormBaseEntity<T = any> extends BaseEntity {
     // --------------------------------------------------------------------------
     //
