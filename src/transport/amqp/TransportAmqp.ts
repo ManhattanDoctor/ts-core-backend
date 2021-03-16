@@ -244,6 +244,10 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
         return this.channel.checkQueue(this.createQueueName(command));
     }
 
+    public async createConnection(): Promise<Connection> {
+        return amqp.connect(this.createConnectionUrl(this.settings));
+    }
+
     // --------------------------------------------------------------------------
     //
     //  Send Methods
@@ -623,10 +627,10 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
         }
     }
 
-    protected get connection(): amqp.Connection {
+    protected get connection(): Connection {
         return this._connection;
     }
-    protected set connection(value: amqp.Connection) {
+    protected set connection(value: Connection) {
         if (this._connection) {
             this._connection.off('error', this.connectionErrorHandler);
             this._connection.off('close', this.connectionClosedHandler);
@@ -651,7 +655,7 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
 
         this.connectionAttempts++;
         try {
-            this.connection = await amqp.connect(url);
+            this.connection = await this.createConnection();
             this.channel = await this.connection.createChannel();
             await this.createIfNeed(this.createExchangeForDead, this.deadExchangeName);
             await this.createIfNeed(this.listenQueueForEvents, this.eventExchangeName);
