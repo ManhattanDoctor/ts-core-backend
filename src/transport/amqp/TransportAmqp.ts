@@ -248,7 +248,8 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
         let channel = await connection.createChannel();
         let queue = this.createQueueName(command);
         try {
-            return channel.purgeQueue(queue);
+            let item = await channel.purgeQueue(queue);
+            return item;
         } catch (error) {
             this.warn(`Unable to purge queue "${queue}"`);
             return { messageCount: 0 };
@@ -260,7 +261,8 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
         let channel = await connection.createChannel();
         let queue = this.createQueueName(command);
         try {
-            return channel.checkQueue(queue);
+            let item = await channel.checkQueue(queue);
+            return item;
         } catch (error) {
             this.warn(`Unable to check queue "${queue}"`);
             return { queue, consumerCount: 0, messageCount: 0 };
