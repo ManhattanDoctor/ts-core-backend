@@ -640,15 +640,15 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
     }
     protected set channel(value: Channel) {
         if (!_.isNil(this._channel)) {
-            this._connection.off('error', this.channelErrorHandler);
-            this._connection.off('close', this.channelClosedHandler);
+            this._channel.off('error', this.channelErrorHandler);
+            this._channel.off('close', this.channelClosedHandler);
             this._channel.close();
         }
         this._channel = value;
         if (!_.isNil(this._channel)) {
-            this._connection.on('error', this.channelErrorHandler);
-            this._connection.on('close', this.channelClosedHandler);
-            this.channel.prefetch(1);
+            this._channel.on('error', this.channelErrorHandler);
+            this._channel.on('close', this.channelClosedHandler);
+            this._channel.prefetch(1);
         }
     }
 
