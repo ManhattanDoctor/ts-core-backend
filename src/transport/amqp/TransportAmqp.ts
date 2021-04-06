@@ -99,7 +99,7 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
             this.settings.amqpQueuePrefix = `AMQP`;
         }
 
-        if (this.connectionPromise) {
+        if (!_.isNil(this.connectionPromise)) {
             return this.connectionPromise.promise;
         }
 
