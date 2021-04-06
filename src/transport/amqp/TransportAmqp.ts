@@ -244,11 +244,27 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
     // --------------------------------------------------------------------------
 
     public async purge(command: string): Promise<Replies.PurgeQueue> {
-        return this.channel.purgeQueue(this.createQueueName(command));
+        let connection = await this.createConnection();
+        let channel = await connection.createChannel();
+        let queue = this.createQueueName(command);
+        try {
+            return channel.purgeQueue(queue);
+        } catch (error) {
+            this.warn(`Unable to purge queue "${queue}"`);
+            return { messageCount: 0 };
+        }
     }
 
     public async check(command: string): Promise<Replies.AssertQueue> {
-        return this.channel.checkQueue(this.createQueueName(command));
+        let connection = await this.createConnection();
+        let channel = await connection.createChannel();
+        let queue = this.createQueueName(command);
+        try {
+            return channel.checkQueue(queue);
+        } catch (error) {
+            this.warn(`Unable to check queue "${queue}"`);
+            return { queue, consumerCount: 0, messageCount: 0 };
+        }
     }
 
     public async createConnection(): Promise<Connection> {
@@ -598,8 +614,8 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
     };
 
     protected connectionErrorHandler = (error: any): void => {
-        this.error(`Connection error${!_.isNil(error) ? error.toString() : ''}`);
-        this.disconnect(error);
+        this.error(`Connection error ${!_.isNil(error) ? error.toString() : ''}`);
+        // this.disconnect(error);
     };
 
     protected connectionClosedHandler = (error: any): void => {
