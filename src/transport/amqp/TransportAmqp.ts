@@ -92,8 +92,11 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
         if (!_.isBoolean(this.settings.isExitApplicationOnDisconnect)) {
             this.settings.isExitApplicationOnDisconnect = true;
         }
+        if (!_.isBoolean(this.settings.isDisconnectOnChannelClose)) {
+            this.settings.isDisconnectOnChannelClose = true;
+        }
         if (_.isNil(this.settings.amqpQueuePrefix)) {
-            this.settings.amqpQueuePrefix = `AMQP2`;
+            this.settings.amqpQueuePrefix = `AMQP`;
         }
 
         if (this.connectionPromise) {
@@ -108,13 +111,17 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
     }
 
     public disconnect(error?: ExtendedError): void {
+        if (!_.isNil(error)) {
+            error = ExtendedError.create(error);
+        }
+
         this.queueOrExchanger.forEach(item => item.reject(error));
         this.queueOrExchanger.clear();
 
         this.requests.forEach((item: ITransportAmqpRequestStorage) => this.channel.nack(item.message, false, true));
         this.requests.clear();
 
-        if (this.connectionPromise) {
+        if (!_.isNil(this.connectionPromise)) {
             this.connectionPromise.reject(error);
             this.connectionPromise = null;
         }
@@ -224,7 +231,7 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
         this.requests = null;
         this.queueOrExchanger = null;
 
-        if (this.observer) {
+        if (!_.isNil(this.observer)) {
             this.observer.complete();
             this.observer = null;
         }
@@ -580,24 +587,38 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
 
     protected connectionConnectCompleteHandler = (): void => {
         this._isConnected = true;
-        if (this.connectionPromise) {
+        if (!_.isNil(this.connectionPromise)) {
             this.connectionPromise.resolve();
         }
     };
 
     protected connectionConnectErrorHandler = (error: ExtendedError): void => {
-        console.log('connectionConnectErrorHandler', error);
+        this.error(`Connection connect error: ${!_.isNil(error) ? error.toString() : ''}`);
         this.disconnect(error);
     };
 
     protected connectionErrorHandler = (error: any): void => {
-        console.log('connectionErrorHandler', error);
-        // this.disconnect(ExtendedError.create(error));
+        this.error(`Connection error${!_.isNil(error) ? error.toString() : ''}`);
+        this.disconnect(error);
     };
 
     protected connectionClosedHandler = (error: any): void => {
-        console.log('connectionClosedHandler', error);
-        this.disconnect(ExtendedError.create(error));
+        this.error(`Connection closed ${!_.isNil(error) ? error.toString() : ''}`);
+        this.disconnect(error);
+    };
+
+    protected channelErrorHandler = (error: any): void => {
+        this.error(`Channel error: ${!_.isNil(error) ? error.toString() : ''}`);
+        if (this.settings.isDisconnectOnChannelClose) {
+            this.disconnect(error);
+        }
+    };
+
+    protected channelClosedHandler = (error: any): void => {
+        this.error(`Channel closed ${!_.isNil(error) ? error.toString() : ''}`);
+        if (this.settings.isDisconnectOnChannelClose) {
+            this.disconnect(error);
+        }
     };
 
     // --------------------------------------------------------------------------
@@ -618,11 +639,15 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
         return this._channel;
     }
     protected set channel(value: Channel) {
-        if (this._channel) {
+        if (!_.isNil(this._channel)) {
+            this._connection.off('error', this.channelErrorHandler);
+            this._connection.off('close', this.channelClosedHandler);
             this._channel.close();
         }
         this._channel = value;
-        if (this._channel) {
+        if (!_.isNil(this._channel)) {
+            this._connection.on('error', this.channelErrorHandler);
+            this._connection.on('close', this.channelClosedHandler);
             this.channel.prefetch(1);
         }
     }
@@ -631,13 +656,13 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
         return this._connection;
     }
     protected set connection(value: Connection) {
-        if (this._connection) {
+        if (!_.isNil(this._connection)) {
             this._connection.off('error', this.connectionErrorHandler);
             this._connection.off('close', this.connectionClosedHandler);
             this._connection.close();
         }
         this._connection = value;
-        if (this._connection) {
+        if (!_.isNil(this._connection)) {
             this._connection.on('error', this.connectionErrorHandler);
             this._connection.on('close', this.connectionClosedHandler);
         }
@@ -702,6 +727,7 @@ export interface ITransportAmqpSettings extends IAmqpSettings, ITransportSetting
 
     reconnectDelay?: number;
     reconnectMaxAttempts?: number;
+    isDisconnectOnChannelClose?: boolean;
     isExitApplicationOnDisconnect?: boolean;
 }
 
