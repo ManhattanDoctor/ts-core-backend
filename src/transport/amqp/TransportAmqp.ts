@@ -251,7 +251,6 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
             let item = await channel.purgeQueue(queue);
             return item;
         } catch (error) {
-            this.warn(`Unable to purge queue "${queue}"`);
             return { messageCount: 0 };
         }
     }
@@ -264,7 +263,6 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
             let item = await channel.checkQueue(queue);
             return item;
         } catch (error) {
-            this.warn(`Unable to check queue "${queue}"`);
             return { queue, consumerCount: 0, messageCount: 0 };
         }
     }
