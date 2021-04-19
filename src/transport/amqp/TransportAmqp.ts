@@ -20,7 +20,6 @@ import * as amqp from 'amqplib';
 import { Channel, Replies, Connection, Message } from 'amqplib';
 import * as _ from 'lodash';
 import { Observable } from 'rxjs';
-import * as uuid from 'uuid';
 import { ITransportAmqpEventOptions } from './ITransportAmqpEventOptions';
 import { ITransportAmqpRequestOptions } from './ITransportAmqpRequestOptions';
 import { ITransportAmqpResponseOptions } from './ITransportAmqpResponseOptions';
@@ -69,7 +68,7 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
 
     constructor(logger: ILogger, settings: ITransportAmqpSettings, context?: string) {
         super(logger, settings, context);
-        this.uid = uuid();
+        this.uid = TraceUtil.generate();
         this.queueOrExchanger = new Map();
     }
 
