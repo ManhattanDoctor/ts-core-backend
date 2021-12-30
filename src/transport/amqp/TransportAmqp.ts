@@ -30,7 +30,7 @@ import { ITransportSettings } from '@ts-core/common/transport';
 import { IAmqpSettings } from '../../settings';
 import { TraceUtil } from '@ts-core/common/trace';
 
-export class TransportAmqp extends Transport<ITransportAmqpSettings> {
+export class TransportAmqp<T extends ITransportAmqpSettings = ITransportAmqpSettings> extends Transport<T> {
     // --------------------------------------------------------------------------
     //
     //  Constant
@@ -66,7 +66,7 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings> {
     //
     // --------------------------------------------------------------------------
 
-    constructor(logger: ILogger, settings: ITransportAmqpSettings, context?: string) {
+    constructor(logger: ILogger, settings: T, context?: string) {
         super(logger, settings, context);
         this.uid = TraceUtil.generate();
         this.queueOrExchanger = new Map();
