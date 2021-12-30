@@ -179,7 +179,7 @@ export class TypeormUtil {
 
     public static async validateEntity(entity: any, options?: ValidatorOptions): Promise<void> {
         try {
-            validateOrReject(entity, options);
+            await validateOrReject(entity, options);
         } catch (errors) {
             if (!_.isEmpty(errors)) {
                 throw new ExtendedError(ValidateUtil.toString(errors), ExtendedError.HTTP_CODE_BAD_REQUEST, errors);
