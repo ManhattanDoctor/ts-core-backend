@@ -177,11 +177,8 @@ export class TypeormUtil {
         return promise.promise;
     }
 
-    public static async validateEntity(entity: any, options?: ValidatorOptions): Promise<void> {
-        let items = await validate(entity, options);
-        if (!_.isEmpty(items)) {
-            throw new ExtendedError(ValidateUtil.toString(items), ExtendedError.HTTP_CODE_BAD_REQUEST, items);
-        }
+    public static async validateEntity(entity: any, options?: ValidatorOptions, code?: number): Promise<void> {
+        await ValidateUtil.validateAsync(entity, true, options, code);
     }
 
     // --------------------------------------------------------------------------
