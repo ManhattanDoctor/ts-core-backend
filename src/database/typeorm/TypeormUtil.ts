@@ -10,7 +10,7 @@ import {
 import { ExtendedError } from '@ts-core/common/error';
 import { PromiseHandler } from '@ts-core/common/promise';
 import { ObjectUtil, ValidateUtil } from '@ts-core/common/util';
-import { validateOrReject } from 'class-validator';
+import { validate } from 'class-validator';
 import { ValidatorOptions } from 'class-validator/validation/ValidatorOptions';
 import * as fs from 'fs';
 import * as _ from 'lodash';
@@ -178,12 +178,9 @@ export class TypeormUtil {
     }
 
     public static async validateEntity(entity: any, options?: ValidatorOptions): Promise<void> {
-        try {
-            await validateOrReject(entity, options);
-        } catch (errors) {
-            if (!_.isEmpty(errors)) {
-                throw new ExtendedError(ValidateUtil.toString(errors), ExtendedError.HTTP_CODE_BAD_REQUEST, errors);
-            }
+        let items = await validate(entity, options);
+        if (!_.isEmpty(items)) {
+            throw new ExtendedError(ValidateUtil.toString(items), ExtendedError.HTTP_CODE_BAD_REQUEST, items);
         }
     }
 
