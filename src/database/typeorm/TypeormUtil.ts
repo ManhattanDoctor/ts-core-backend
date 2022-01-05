@@ -10,11 +10,12 @@ import {
 import { ExtendedError } from '@ts-core/common/error';
 import { PromiseHandler } from '@ts-core/common/promise';
 import { ObjectUtil, ValidateUtil } from '@ts-core/common/util';
-import { validate } from 'class-validator';
 import { ValidatorOptions } from 'class-validator/validation/ValidatorOptions';
+import { Connection, ConnectionOptions, QueryFailedError, SelectQueryBuilder } from 'typeorm';
+import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual } from 'typeorm';
+import { format } from 'date-fns';
 import * as fs from 'fs';
 import * as _ from 'lodash';
-import { Connection, ConnectionOptions, QueryFailedError, SelectQueryBuilder } from 'typeorm';
 
 export class TypeormUtil {
     // --------------------------------------------------------------------------
@@ -190,6 +191,16 @@ export class TypeormUtil {
     private static isErrorCode(error: any, code: any): boolean {
         return error && error.code === code;
     }
+}
+
+export const MoreThanDate = (date: Date, type: TypeormDateFormat) => MoreThan(format(date, type));
+export const MoreThanOrEqualDate = (date: Date, type: TypeormDateFormat) => MoreThanOrEqual(format(date, type));
+export const LessThanDate = (date: Date, type: TypeormDateFormat) => LessThan(format(date, type));
+export const LessThanOrEqualDate = (date: Date, type: TypeormDateFormat) => LessThanOrEqual(format(date, type));
+
+export enum TypeormDateFormat {
+    DATE = 'yyyy-MM-dd',
+    DATE_TIME = 'yyyy-MM-dd HH:MM:ss'
 }
 
 export enum TypeormPostgreError {
