@@ -1,4 +1,5 @@
 import { ValueTransformer } from 'typeorm';
+import * as _ from 'lodash';
 
 export class TypeormDecimalTransformer implements ValueTransformer {
     // --------------------------------------------------------------------------
@@ -16,7 +17,7 @@ export class TypeormDecimalTransformer implements ValueTransformer {
     // --------------------------------------------------------------------------
 
     public static get instance(): TypeormDecimalTransformer {
-        if (!TypeormDecimalTransformer._instance) {
+        if (_.isNil(TypeormDecimalTransformer._instance)) {
             TypeormDecimalTransformer._instance = new TypeormDecimalTransformer();
         }
         return TypeormDecimalTransformer._instance;
@@ -33,6 +34,6 @@ export class TypeormDecimalTransformer implements ValueTransformer {
     }
 
     public from(data: string): number {
-        return parseFloat(data);
+        return !_.isNil(data) ? parseFloat(data) : null;
     }
 }
