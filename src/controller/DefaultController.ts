@@ -35,7 +35,7 @@ export abstract class DefaultController<U, V> extends LoggerWrapper {
     // --------------------------------------------------------------------------
 
     protected async validateRequest(value: U): Promise<U> {
-        let items: Array<ValidationError> = await validate(value, this.validatorOptions);
+        let items: Array<ValidationError> = await validate(value as any, this.validatorOptions);
         if (!_.isEmpty(items)) {
             throw new ExtendedError(items.toString(), ExtendedError.HTTP_CODE_BAD_REQUEST, items);
         }
@@ -48,7 +48,7 @@ export abstract class DefaultController<U, V> extends LoggerWrapper {
 
     
     protected async validateResponse(value: V): Promise<V> {
-        let items: Array<ValidationError> = await validate(value, this.validatorOptions);
+        let items: Array<ValidationError> = await validate(value as any, this.validatorOptions);
         if (!_.isEmpty(items)) {
             throw new ExtendedError(items.toString(), ExtendedError.HTTP_CODE_INTERNAL_SERVER_ERROR, items);
         }

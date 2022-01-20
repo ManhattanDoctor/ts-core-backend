@@ -10,7 +10,7 @@ import {
 import { ExtendedError } from '@ts-core/common/error';
 import { PromiseHandler } from '@ts-core/common/promise';
 import { ObjectUtil, ValidateUtil } from '@ts-core/common/util';
-import { ValidatorOptions } from 'class-validator/validation/ValidatorOptions';
+import { ValidatorOptions } from 'class-validator';
 import { Connection, ConnectionOptions, QueryFailedError, SelectQueryBuilder } from 'typeorm';
 import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual } from 'typeorm';
 import { format } from 'date-fns';

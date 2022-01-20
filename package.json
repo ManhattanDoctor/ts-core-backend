@@ -9,21 +9,16 @@
     },
     "license": "ISC",
     "dependencies": {
-        "@ts-core/common": "^1.0.185",
-        "@types/amqplib": "0.5.13",
-        "@types/cache-manager": "2.10.0",
+        "@ts-core/common": "^1.0.191",
+        "@types/amqplib": "^0.8.2",
         "@types/node": "12.12.18",
-        "amqplib": "0.5.5",
-        "cache-manager": "2.10.1",
-        "cli-spinner": "0.2.10",
+        "amqplib": "^0.8.0",
         "date-fns": "^2.28.0",
-        "dotenv": "8.2.0",
-        "node-fetch": "2.6.0",
-        "typeorm": "0.2.21",
-        "util": "0.12.1"
+        "dotenv": "^14.2.0",
+        "typeorm": "^0.2.41"
     },
     "devDependencies": {
-        "gulp-npm-publisher": "1.0.1"
+        "gulp-npm-publisher": "^1.0.3"
     },
     "repository": {
         "type": "git",

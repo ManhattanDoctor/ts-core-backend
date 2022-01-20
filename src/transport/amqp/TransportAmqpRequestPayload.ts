@@ -1,8 +1,7 @@
-import { ITransportCommand, ITransportCommandOptions, TransportCommand, TransportCommandAsync, TransportCommandOptions } from '@ts-core/common/transport';
+import { ITransportCommand, TransportCommand, TransportCommandAsync, TransportCommandOptions } from '@ts-core/common/transport';
 import { TransportInvalidDataError } from '@ts-core/common/transport/error';
-import { TransformUtil, ValidateUtil } from '@ts-core/common/util';
+import { TransformUtil, ClassType, ValidateUtil } from '@ts-core/common/util';
 import { Message } from 'amqplib';
-import { ClassType } from 'class-transformer/ClassTransformer';
 import { IsBoolean, IsDefined, ValidateNested, IsOptional, IsString } from 'class-validator';
 import * as _ from 'lodash';
 import { ITransportAmqpRequestPayload } from './ITransportAmqpRequestPayload';
