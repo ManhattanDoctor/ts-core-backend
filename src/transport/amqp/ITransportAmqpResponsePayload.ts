@@ -1,4 +1,4 @@
-import { ExtendedError } from '@ts-core/common/error';
+import { ExtendedError } from '@ts-core/common';
 
 export interface ITransportAmqpResponsePayload<V = any> {
     id: string;

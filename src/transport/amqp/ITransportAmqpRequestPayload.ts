@@ -1,4 +1,4 @@
-import { ITransportCommandOptions } from '@ts-core/common/transport';
+import { ITransportCommandOptions } from '@ts-core/common';
 
 export interface ITransportAmqpRequestPayload<U = any> {
     id: string;

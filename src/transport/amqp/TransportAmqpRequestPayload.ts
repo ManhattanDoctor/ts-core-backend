@@ -1,11 +1,10 @@
-import { ITransportCommand, TransportCommand, TransportCommandAsync, TransportCommandOptions } from '@ts-core/common/transport';
-import { TransportInvalidDataError } from '@ts-core/common/transport/error';
-import { TransformUtil, ClassType, ValidateUtil } from '@ts-core/common/util';
+import { ITransportCommand, TransformUtil, ClassType, ValidateUtil, TransportCommand, TransportCommandAsync, TransportCommandOptions } from '@ts-core/common';
 import { Message } from 'amqplib';
 import { IsBoolean, IsDefined, ValidateNested, IsOptional, IsString } from 'class-validator';
 import * as _ from 'lodash';
 import { ITransportAmqpRequestPayload } from './ITransportAmqpRequestPayload';
 import { Type } from 'class-transformer';
+import { TransportInvalidDataError } from '@ts-core/common';
 
 export class TransportAmqpRequestPayload<U = any> implements ITransportAmqpRequestPayload<U> {
     // --------------------------------------------------------------------------

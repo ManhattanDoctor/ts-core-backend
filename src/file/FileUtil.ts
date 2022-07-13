@@ -1,4 +1,4 @@
-import { PromiseHandler } from '@ts-core/common/promise';
+import { PromiseHandler } from '@ts-core/common';
 import * as _ from 'lodash';
 import * as fs from 'fs';
 

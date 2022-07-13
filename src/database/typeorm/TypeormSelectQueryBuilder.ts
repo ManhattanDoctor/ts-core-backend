@@ -1,7 +1,6 @@
-import { ExtendedError } from '@ts-core/common/error';
-import { ILogger } from '@ts-core/common/logger';
+import { ExtendedError, ILogger } from '@ts-core/common';
 import * as _ from 'lodash';
-import { SelectQueryBuilder, getRepository } from 'typeorm';
+import { SelectQueryBuilder } from 'typeorm';
 
 export class TypeormSelectQueryBuilder<T> extends SelectQueryBuilder<T> {
     // --------------------------------------------------------------------------

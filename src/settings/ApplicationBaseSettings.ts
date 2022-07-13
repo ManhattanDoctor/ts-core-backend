@@ -1,5 +1,5 @@
 
-import { ILogger, LoggerLevel } from '@ts-core/common/logger';
+import { ILogger, LoggerLevel } from '@ts-core/common';
 import { ILoggerSettings } from './ILoggerSettings';
 import { EnvSettingsStorage } from './EnvSettingsStorage';
 

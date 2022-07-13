@@ -1,4 +1,4 @@
-import { ILogger, LoggerLevel } from '@ts-core/common/logger';
+import { ILogger, LoggerLevel } from '@ts-core/common';
 
 export interface ILoggerSettings {
     readonly logger?: ILogger;

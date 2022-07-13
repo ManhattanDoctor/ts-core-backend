@@ -1,5 +1,4 @@
-import { IDestroyable } from '@ts-core/common';
-import { ILogger, LoggerWrapper } from '@ts-core/common/logger';
+import { ILogger, IDestroyable, LoggerWrapper } from '@ts-core/common';
 import * as _ from 'lodash';
 import { IModeSettings } from '../settings';
 

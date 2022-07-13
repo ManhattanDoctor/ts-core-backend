@@ -1,6 +1,4 @@
-import { ITransportEvent, TransportEvent } from '@ts-core/common/transport';
-import { TransportInvalidDataError } from '@ts-core/common/transport/error';
-import { TransformUtil, ValidateUtil } from '@ts-core/common/util';
+import { ITransportEvent, TransportEvent, TransformUtil, ValidateUtil, TransportInvalidDataError } from '@ts-core/common';
 import { Message } from 'amqplib';
 import { IsOptional, IsString } from 'class-validator';
 import * as _ from 'lodash';
