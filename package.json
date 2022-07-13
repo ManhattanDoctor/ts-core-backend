@@ -9,11 +9,10 @@
     },
     "main": "./cjs/public-api.js",
     "module": "./esm/public-api.js",
-    "type": "module",
     "exports": {
         ".": {
             "import": "./esm/public-api.js",
-            "require": "./cjs/public-api.cjs"
+            "require": "./cjs/public-api.js"
         }
     },
     "license": "ISC",
@@ -22,7 +21,7 @@
         "amqplib": "^0.8.0",
         "date-fns": "^2.28.0",
         "dotenv": "^14.2.0",
-        "typeorm": "^0.2.41"
+        "typeorm": "^0.3.7"
     },
     "devDependencies": {
         "@types/amqplib": "^0.8.2",

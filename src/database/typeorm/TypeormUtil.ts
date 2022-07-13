@@ -12,7 +12,7 @@ import {
     IsFilterableCondition
 } from '@ts-core/common';
 import { ValidatorOptions } from 'class-validator';
-import { Connection, ConnectionOptions, QueryFailedError, SelectQueryBuilder } from 'typeorm';
+import { DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder } from 'typeorm';
 import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual } from 'typeorm';
 import { format } from 'date-fns';
 import * as fs from 'fs';
@@ -140,14 +140,14 @@ export class TypeormUtil {
     //
     // --------------------------------------------------------------------------
 
-    public static async clearEntities(connection: Connection): Promise<void> {
-        for (let item of connection.entityMetadatas) {
-            await connection.getRepository(item.name).query(`DELETE FROM ${item.tableName};`);
+    public static async clearEntities(data: DataSource): Promise<void> {
+        for (let item of data.entityMetadatas) {
+            await data.getRepository(item.name).query(`DELETE FROM ${item.tableName};`);
         }
     }
 
-    public static async databaseClear(connection: Connection, name: string): Promise<void> {
-        await connection.synchronize(true);
+    public static async databaseClear(data: DataSource, name: string): Promise<void> {
+        await data.synchronize(true);
     }
 
     public static isEntityId(id: any): boolean {
@@ -165,7 +165,7 @@ export class TypeormUtil {
         return TypeormUtil.isErrorCode(error, TypeormPostgreError.SERIALIZATION_FAILURE);
     }
 
-    public static async generateOrmConfig(config: ConnectionOptions, path: string): Promise<void> {
+    public static async generateOrmConfig(config: DataSourceOptions, path: string): Promise<void> {
         let data = JSON.stringify(config);
         data = data.replace(/:\"migration\"/i, ':"src/migration"');
         let promise = PromiseHandler.create();
