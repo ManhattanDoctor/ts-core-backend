@@ -5,7 +5,7 @@ import {
     IFilterable,
     IPaginable,
     IPagination,
-    ObjectUtil, 
+    ObjectUtil,
     ValidateUtil,
     ExtendedError,
     PromiseHandler,
@@ -79,14 +79,18 @@ export class TypeormUtil {
         return query;
     }
 
-    public static applyConditions<U, T>(query: SelectQueryBuilder<U>, conditions: FilterableConditions<T>): SelectQueryBuilder<U> {
+    public static applyConditions<U, T>(query: SelectQueryBuilder<U>, conditions: FilterableConditions<T>, alias?: string): SelectQueryBuilder<U> {
         if (_.isNil(conditions)) {
             return query;
         }
 
+        if (_.isEmpty(alias)) {
+            alias = query.alias;
+        }
+
         for (let key of Object.keys(conditions)) {
             let value = conditions[key];
-            let property = `${query.alias}.${key}`;
+            let property = `${alias}.${key}`;
             if (_.isArray(value)) {
                 query.andWhere(`${property} IN (:...${key})`, { [key]: value });
                 continue;
