@@ -9,7 +9,9 @@ import {
     ValidateUtil,
     ExtendedError,
     PromiseHandler,
-    IsFilterableCondition
+    IsFilterableCondition,
+    IFilterableCondition,
+    IFilterableConditionValue
 } from '@ts-core/common';
 import { ValidatorOptions } from 'class-validator';
 import { DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder } from 'typeorm';
@@ -84,36 +86,47 @@ export class TypeormUtil {
             return query;
         }
 
+        for (let key of Object.keys(conditions)) {
+            query = TypeormUtil.applyCondition(query, key, conditions[key], alias);
+        }
+        return query;
+    }
+
+    public static applyCondition<U, T>(query: SelectQueryBuilder<U>, name: keyof T, value: IFilterableConditionValue<T> | IFilterableCondition<T>, alias?: string): SelectQueryBuilder<U> {
+        if (_.isEmpty(name) || _.isNil(value)) {
+            return query;
+        }
+
         if (_.isEmpty(alias)) {
             alias = query.alias;
         }
 
-        for (let key of Object.keys(conditions)) {
-            let value = conditions[key];
-            let property = `${alias}.${key}`;
-            if (_.isArray(value)) {
-                query.andWhere(`${property} IN (:...${key})`, { [key]: value });
-                continue;
-            }
-
-            if (!IsFilterableCondition(value)) {
-                query.andWhere(`${property} = :${key}`, { [key]: value });
-                continue;
-            }
-
-            let conditionKey = `:${key}`;
-            switch (value.condition) {
-                case FilterableConditionType.CONTAINS:
-                    property = `LOWER(${property})`;
-                    conditionKey = `LOWER(${conditionKey})`;
-                    break;
-            }
-
-            let condition = this.getConditionByType(value.condition);
-            query.andWhere(`${property} ${condition} ${conditionKey}`, { [key]: value.value });
+        let key = name.toString();
+        let property = `${alias}.${key}`;
+        if (_.isArray(value)) {
+            query.andWhere(`${property} IN (:...${key})`, { [key]: value });
+            return query;
         }
+
+        if (!IsFilterableCondition(value)) {
+            query.andWhere(`${property} = :${key}`, { [key]: value });
+            return query;
+        }
+
+        let conditionKey = `:${key}`;
+        switch (value.condition) {
+            case FilterableConditionType.CONTAINS:
+                property = `LOWER(${property})`;
+                conditionKey = `LOWER(${conditionKey})`;
+                break;
+        }
+
+        let condition = this.getConditionByType(value.condition);
+        query.andWhere(`${property} ${condition} ${conditionKey}`, { [key]: value.value });
+
         return query;
     }
+
 
     public static async toPagination<U, V, T>(
         query: SelectQueryBuilder<U>,
