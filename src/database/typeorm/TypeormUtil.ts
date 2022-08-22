@@ -71,12 +71,15 @@ export class TypeormUtil {
         return query;
     }
 
-    public static applySort<U, T>(query: SelectQueryBuilder<U>, sort: FilterableSort<T>): SelectQueryBuilder<U> {
+    public static applySort<U, T>(query: SelectQueryBuilder<U>, sort: FilterableSort<T>, alias?: string): SelectQueryBuilder<U> {
         if (_.isNil(sort)) {
             return query;
         }
+        if (_.isEmpty(alias)) {
+            alias = query.alias;
+        }
         for (let key of Object.keys(sort)) {
-            query.addOrderBy(`${query.alias}.${key}`, sort[key] ? 'ASC' : 'DESC', 'NULLS LAST');
+            query.addOrderBy(`${alias}.${key}`, sort[key] ? 'ASC' : 'DESC', 'NULLS LAST');
         }
         return query;
     }
@@ -85,7 +88,6 @@ export class TypeormUtil {
         if (_.isNil(conditions)) {
             return query;
         }
-
         for (let key of Object.keys(conditions)) {
             query = TypeormUtil.applyCondition(query, key, conditions[key], alias);
         }
