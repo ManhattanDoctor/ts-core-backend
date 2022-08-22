@@ -17,7 +17,7 @@
     },
     "license": "ISC",
     "dependencies": {
-        "@ts-core/common": "^3.0.5",
+        "@ts-core/common": "^3.0.6",
         "amqplib": "^0.8.0",
         "date-fns": "^2.28.0",
         "dotenv": "^14.2.0",

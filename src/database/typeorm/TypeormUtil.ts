@@ -50,6 +50,10 @@ export class TypeormUtil {
             case FilterableConditionType.CONTAINS:
             case FilterableConditionType.CONTAINS_SENSITIVE:
                 return 'like';
+            case FilterableConditionType.INCLUDES_ALL:
+                return '@>';
+            case FilterableConditionType.INCLUDES_ONE_OF:
+                return '&&';
             default:
                 throw new ExtendedError(`Invalid condition type ${item}`);
         }
@@ -105,13 +109,9 @@ export class TypeormUtil {
 
         let key = name.toString();
         let property = `${alias}.${key}`;
-        if (_.isArray(value)) {
-            query.andWhere(`${property} IN (:...${key})`, { [key]: value });
-            return query;
-        }
 
         if (!IsFilterableCondition(value)) {
-            query.andWhere(`${property} = :${key}`, { [key]: value });
+            query.andWhere(`${property} ${_.isArray(value) ? `IN (:...${key})` : `= :${key}`}`, { [key]: value });
             return query;
         }
 
