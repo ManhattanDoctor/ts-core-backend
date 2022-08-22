@@ -111,7 +111,7 @@ export class TypeormUtil {
         let property = `${alias}.${key}`;
 
         if (!IsFilterableCondition(value)) {
-            query.andWhere(`${property} ${_.isArray(value) ? `IN (:...${key})` : `= :${key}`}`, { [key]: value });
+            query.andWhere(`${property} ${!_.isArray(value) ? `= :${key}` : `IN (:...${key})`}`, { [key]: value });
             return query;
         }
 
@@ -138,11 +138,9 @@ export class TypeormUtil {
         query = TypeormUtil.applyFilters(query, params);
         query = query.skip(params.pageSize * params.pageIndex).take(params.pageSize);
 
-        let total = await query.getCount();
-        let pages = Math.ceil(total / params.pageSize);
-
-        let many = await query.getMany();
+        let [many, total] = await query.getManyAndCount();
         let items = await Promise.all(many.map(item => transform(item)));
+        let pages = Math.ceil(total / params.pageSize);
         return { items, pages, total, pageSize: params.pageSize, pageIndex: params.pageIndex };
     }
 
