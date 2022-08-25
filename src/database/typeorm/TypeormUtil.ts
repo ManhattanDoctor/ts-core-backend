@@ -113,14 +113,14 @@ export class TypeormUtil {
 
         let key = name.toString();
         let property = `${alias}.${key}`;
-        let parameters = { [key]: value };
         let conditionKey = `:${key}`;
 
         if (!IsFilterableCondition(value)) {
-            query.andWhere(`${property} ${!_.isArray(value) ? `= ${conditionKey}` : `IN (:...${key})`}`, parameters);
+            query.andWhere(`${property} ${!_.isArray(value) ? `= ${conditionKey}` : `IN (:...${key})`}`, { [key]: value });
             return query;
         }
 
+        let parameters = { [key]: value.value };
         switch (value.condition) {
             case FilterableConditionType.CONTAINS:
                 property = `LOWER(${property})`;
