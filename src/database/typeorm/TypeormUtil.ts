@@ -35,7 +35,7 @@ export class TypeormUtil {
     //
     // --------------------------------------------------------------------------
 
-    private static getConditionByType(item: FilterableConditionType): string {
+    private static getCondition(item: FilterableConditionType): string {
         switch (item) {
             case FilterableConditionType.EQUAL:
                 return '=';
@@ -54,6 +54,10 @@ export class TypeormUtil {
                 return '@>';
             case FilterableConditionType.INCLUDES_ONE_OF:
                 return '&&';
+            case FilterableConditionType.NULL:
+                return 'IS NULL'
+            case FilterableConditionType.NOT_NULL:
+                return 'IS NOT NULL'
             default:
                 throw new ExtendedError(`Invalid condition type ${item}`);
         }
@@ -109,33 +113,40 @@ export class TypeormUtil {
 
         let key = name.toString();
         let property = `${alias}.${key}`;
+        let parameters = { [key]: value };
+        let conditionKey = `:${key}`;
 
         if (!IsFilterableCondition(value)) {
-            query.andWhere(`${property} ${!_.isArray(value) ? `= :${key}` : `IN (:...${key})`}`, { [key]: value });
+            query.andWhere(`${property} ${!_.isArray(value) ? `= ${conditionKey}` : `IN (:...${key})`}`, parameters);
             return query;
         }
 
-        let conditionKey = `:${key}`;
         switch (value.condition) {
             case FilterableConditionType.CONTAINS:
                 property = `LOWER(${property})`;
                 conditionKey = `LOWER(${conditionKey})`;
                 break;
+            case FilterableConditionType.NULL:
+            case FilterableConditionType.NOT_NULL:
+                parameters = null;
+                conditionKey = null;
+                break;
         }
 
-        let condition = this.getConditionByType(value.condition);
-        query.andWhere(`${property} ${condition} ${conditionKey}`, { [key]: value.value });
-
+        let condition = this.getCondition(value.condition);
+        let where = `${property} ${condition}`;
+        if (!_.isEmpty(conditionKey)) {
+            where += ` ${conditionKey}`;
+        }
+        query.andWhere(where, parameters);
         return query;
     }
 
+    public static async toPagination<U, V, T>(query: SelectQueryBuilder<U>, params: IPaginable<T>, transform: (item: U) => Promise<V>, isApplyFilters: boolean = true): Promise<IPagination<V>> {
+        if (isApplyFilters) {
+            query = TypeormUtil.applyFilters(query, params);
+        }
 
-    public static async toPagination<U, V, T>(
-        query: SelectQueryBuilder<U>,
-        params: IPaginable<T>,
-        transform: (item: U) => Promise<V>
-    ): Promise<IPagination<V>> {
-        query = TypeormUtil.applyFilters(query, params);
         query = query.skip(params.pageSize * params.pageIndex).take(params.pageSize);
 
         let [many, total] = await query.getManyAndCount();
