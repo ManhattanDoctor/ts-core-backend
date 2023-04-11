@@ -127,7 +127,7 @@ export class FileUtil {
     //
     // --------------------------------------------------------------------------
 
-    public async hashByUrl(url: string, algorithm?: string, digest?: BinaryToTextEncoding): Promise<string> {
+    public static async hashByUrl(url: string, algorithm?: string, digest?: BinaryToTextEncoding): Promise<string> {
         if (_.isNil(algorithm)) {
             algorithm = 'md5';
         }
@@ -138,7 +138,7 @@ export class FileUtil {
         return createHash(algorithm).update(data).digest(digest);
     }
 
-    public async hashByPath(path: string, algorithm?: string, digest?: BinaryToTextEncoding): Promise<string> {
+    public static async hashByPath(path: string, algorithm?: string, digest?: BinaryToTextEncoding): Promise<string> {
         if (_.isNil(algorithm)) {
             algorithm = 'md5';
         }
