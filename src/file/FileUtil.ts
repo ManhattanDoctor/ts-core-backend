@@ -1,4 +1,6 @@
 import { PromiseHandler } from '@ts-core/common';
+import { createHash, BinaryToTextEncoding } from 'crypto';
+import axios from 'axios';
 import * as _ from 'lodash';
 import * as fs from 'fs';
 
@@ -80,7 +82,7 @@ export class FileUtil {
         });
         return promise.promise;
     }
-    
+
     public static async saveSync<T>(path: string, data: T, encoding: BufferEncoding): Promise<T> {
         fs.writeFileSync(path, data as any, encoding);
         return data;
@@ -117,5 +119,33 @@ export class FileUtil {
             }
         });
         return promise.promise;
+    }
+
+    // --------------------------------------------------------------------------
+    //
+    // 	Hash
+    //
+    // --------------------------------------------------------------------------
+
+    public async hashByUrl(url: string, algorithm?: string, digest?: BinaryToTextEncoding): Promise<string> {
+        if (_.isNil(algorithm)) {
+            algorithm = 'md5';
+        }
+        if (_.isNil(digest)) {
+            digest = 'hex';
+        }
+        let { data } = await axios.get(url, { responseType: 'arraybuffer' });
+        return createHash(algorithm).update(data).digest(digest);
+    }
+
+    public async hashByPath(path: string, algorithm?: string, digest?: BinaryToTextEncoding): Promise<string> {
+        if (_.isNil(algorithm)) {
+            algorithm = 'md5';
+        }
+        if (_.isNil(digest)) {
+            digest = 'hex';
+        }
+        let file = await FileUtil.read(path, 'binary')
+        return createHash(algorithm).update(file).digest(digest);
     }
 }
