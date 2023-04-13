@@ -5,6 +5,7 @@ export * from './controller/DefaultController';
 export * from './database/typeorm/TypeormDecimalTransformer';
 export * from './database/typeorm/TypeormJSONTransformer';
 export * from './database/typeorm/TypeormUtil';
+export * from './database/typeorm/TypeormValidableEntity';
 //
 export * from './file/FileUtil';
 //
