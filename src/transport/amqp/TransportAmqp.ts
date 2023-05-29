@@ -1,7 +1,3 @@
-import {  } from '@ts-core/common';
-import {  } from '@ts-core/common';
-import {  } from '@ts-core/common';
-import {  } from '@ts-core/common';
 import {
     ExtendedError,
     LoadableEvent,
@@ -12,7 +8,6 @@ import {
     ITransportCommandAsync,
     ITransportCommandOptions,
     ITransportEvent,
-    ITransportRequestStorage,
     Transport,
     TransportCommandWaitDelay,
     TransportLogType,
@@ -22,7 +17,8 @@ import {
     TraceUtil,
     ITransportSettings,
     TransportWaitExceedError,
-    TransportTimeoutError
+    TransportTimeoutError,
+    ITransportCommandRequest
 } from '@ts-core/common';
 import * as amqp from 'amqplib';
 import { Channel, Replies, Connection, Message } from 'amqplib';
@@ -36,7 +32,7 @@ import { TransportAmqpEventPayload } from './TransportAmqpEventPayload';
 import { TransportAmqpRequestPayload } from './TransportAmqpRequestPayload';
 import { TransportAmqpResponsePayload } from './TransportAmqpResponsePayload';
 
-export class TransportAmqp<T extends ITransportAmqpSettings = ITransportAmqpSettings> extends Transport<T> {
+export class TransportAmqp extends Transport<ITransportAmqpSettings, ITransportCommandOptions, ITransportAmqpCommandRequest> {
     // --------------------------------------------------------------------------
     //
     //  Constant
@@ -72,7 +68,7 @@ export class TransportAmqp<T extends ITransportAmqpSettings = ITransportAmqpSett
     //
     // --------------------------------------------------------------------------
 
-    constructor(logger: ILogger, settings: T, context?: string) {
+    constructor(logger: ILogger, settings: ITransportAmqpSettings, context?: string) {
         super(logger, settings, context);
         this.uid = TraceUtil.generate();
         this.queueOrExchanger = new Map();
@@ -123,7 +119,7 @@ export class TransportAmqp<T extends ITransportAmqpSettings = ITransportAmqpSett
         this.queueOrExchanger.forEach(item => item.reject(error));
         this.queueOrExchanger.clear();
 
-        this.requests.forEach((item: ITransportAmqpRequestStorage) => this.channel.nack(item.message, false, true));
+        this.requests.forEach((item) => this.channel.nack(item.message, false, true));
         this.requests.clear();
 
         if (!_.isNil(this.connectionPromise)) {
@@ -171,7 +167,7 @@ export class TransportAmqp<T extends ITransportAmqpSettings = ITransportAmqpSett
             throw new ExtendedError(`Unable to complete "${command.name}" command: transport is not connected`);
         }
 
-        let request = this.requests.get(command.id) as ITransportAmqpRequestStorage;
+        let request = this.requests.get(command.id);
         this.requests.delete(command.id);
         if (_.isNil(request)) {
             this.error(`Unable to complete command "${command.name}": probably command was already completed`);
@@ -184,7 +180,7 @@ export class TransportAmqp<T extends ITransportAmqpSettings = ITransportAmqpSett
             return;
         }
 
-        if (this.isRequestExpired(request)) {
+        if (this.isCommandRequestExpired(request)) {
             this.logCommand(command, TransportLogType.RESPONSE_EXPIRED);
             this.warn(`Unable to completed "${command.name}" command: timeout is expired`);
             this.channel.ack(request.message);
@@ -206,12 +202,12 @@ export class TransportAmqp<T extends ITransportAmqpSettings = ITransportAmqpSett
     }
 
     public wait<U>(command: ITransportCommand<U>): void {
-        let request = this.requests.get(command.id) as ITransportAmqpRequestStorage;
+        let request = this.requests.get(command.id);
         if (_.isNil(request)) {
             throw new ExtendedError(`Unable to wait "${command.name}" command: can't find request details`);
         }
 
-        if (this.isRequestWaitExpired(request)) {
+        if (this.isCommandRequestWaitExpired(request)) {
             this.complete(command, new TransportWaitExceedError(command));
             return;
         }
@@ -229,17 +225,9 @@ export class TransportAmqp<T extends ITransportAmqpSettings = ITransportAmqpSett
         if (this.isDestroyed) {
             return;
         }
-        super.destroy();
-
         this.disconnect();
-
-        this.requests = null;
+        super.destroy();
         this.queueOrExchanger = null;
-
-        if (!_.isNil(this.observer)) {
-            this.observer.complete();
-            this.observer = null;
-        }
     }
 
     // --------------------------------------------------------------------------
@@ -394,7 +382,7 @@ export class TransportAmqp<T extends ITransportAmqpSettings = ITransportAmqpSett
         this.logCommand(command, TransportLogType.REQUEST_RECEIVED);
         let request = this.checkRequestStorage(command, payload, message);
 
-        if (this.isRequestExpired(request)) {
+        if (this.isCommandRequestExpired(request)) {
             this.logCommand(command, TransportLogType.REQUEST_EXPIRED);
             this.warn(`Received "${command.name}" command with already expired timeout: ignore`);
             this.requests.delete(command.id);
@@ -458,8 +446,8 @@ export class TransportAmqp<T extends ITransportAmqpSettings = ITransportAmqpSett
         this.eventReceived(event);
     };
 
-    protected checkRequestStorage<U>(command: ITransportCommand<U>, payload: TransportAmqpRequestPayload<U>, message: Message): ITransportAmqpRequestStorage {
-        let item = this.requests.get(command.id) as ITransportAmqpRequestStorage;
+    protected checkRequestStorage<U>(command: ITransportCommand<U>, payload: TransportAmqpRequestPayload<U>, message: Message): ITransportAmqpCommandRequest {
+        let item = this.requests.get(command.id);
         if (!_.isNil(item)) {
             item.message = message;
             item.waitCount++;
@@ -563,7 +551,7 @@ export class TransportAmqp<T extends ITransportAmqpSettings = ITransportAmqpSett
 
         if (isNeedReply) {
             request.messageId = request.correlationId = command.id;
-            request.expiration = options.timeout;
+            request.expiration = options.defaultTimeout;
         }
         return request;
     }
@@ -752,7 +740,7 @@ export interface ITransportAmqpSettings extends IAmqpSettings, ITransportSetting
     isExitApplicationOnDisconnect?: boolean;
 }
 
-interface ITransportAmqpRequestStorage extends ITransportRequestStorage {
+interface ITransportAmqpCommandRequest extends ITransportCommandRequest {
     message: Message;
     payload: TransportAmqpRequestPayload;
 }
