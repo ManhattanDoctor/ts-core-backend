@@ -450,18 +450,15 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings, ITransportC
         let item = this.requests.get(command.id);
         if (!_.isNil(item)) {
             item.message = message;
-            item.waitCount++;
-        } else {
-            item = {
-                waitCount: 0,
-                isNeedReply: payload.isNeedReply,
-                expiredDate: payload.isNeedReply ? DateUtil.getDate(Date.now() + this.getCommandTimeoutDelay(command, payload.options)) : null,
-                message,
-                payload
-            };
-            item = ObjectUtil.copyProperties(payload.options, item);
-            this.requests.set(command.id, item);
+            item.waited++;
+            return item;
         }
+
+        item = ObjectUtil.copyProperties(payload.options, { waitCount: 0, isNeedReply: payload.isNeedReply, message, payload });
+        if (payload.isNeedReply) {
+            item.expired = DateUtil.getDate(Date.now() + this.getCommandTimeoutDelay(command, payload.options));
+        }
+        this.requests.set(command.id, item);
         return item;
     }
 
@@ -551,7 +548,7 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings, ITransportC
 
         if (isNeedReply) {
             request.messageId = request.correlationId = command.id;
-            request.expiration = options.defaultTimeout;
+            request.expiration = options.timeout;
         }
         return request;
     }
