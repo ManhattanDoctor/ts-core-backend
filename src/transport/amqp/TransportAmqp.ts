@@ -349,11 +349,11 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings, ITransportC
     // --------------------------------------------------------------------------
 
     protected eventReceived<U>(event: ITransportEvent<U>): void {
-        let item = this.dispatchers.get(event.name);
-        if (_.isNil(item)) {
-            return;
-        }
-        item.next(event);
+            let item = this.dispatchers.get(event.name);
+            if (_.isNil(item)) {
+                return;
+            }
+            item.next(event);
     }
 
     // --------------------------------------------------------------------------
