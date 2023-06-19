@@ -5,4 +5,4 @@ export * from './IModeSettings';
 export * from './IPrometheusSettings';
 export * from './IWebSettings';
 export * from './EnvSettingsStorage';
-export * from './ApplicationBaseSettings';
+export * from './LoggerSettings';
