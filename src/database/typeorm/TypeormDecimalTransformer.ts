@@ -29,11 +29,11 @@ export class TypeormDecimalTransformer implements ValueTransformer {
     //
     // --------------------------------------------------------------------------
 
-    public to(data: number): number {
-        return data;
+    public to(item: number): number {
+        return item;
     }
 
-    public from(data: string): number {
-        return !_.isNil(data) ? parseFloat(data) : null;
+    public from(item: string): number {
+        return !_.isNil(item) ? parseFloat(item) : null;
     }
 }

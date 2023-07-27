@@ -29,11 +29,11 @@ export class TypeormJSONTransformer implements ValueTransformer {
     //
     // --------------------------------------------------------------------------
 
-    public from<T>(data: string): T {
-        return JSON.parse(data);
+    public from<T>(item: string): T {
+        return !_.isNil(item) ? JSON.parse(item) : null;
     }
 
-    public to<T>(data: T): string {
-        return JSON.stringify(data);
+    public to<T>(item: T): string {
+        return !_.isNil(item) ? JSON.stringify(item) : null;
     }
 }
