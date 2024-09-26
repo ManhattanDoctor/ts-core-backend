@@ -1,6 +1,6 @@
 import { validate, ValidationError, ValidatorOptions } from 'class-validator';
-import * as _ from 'lodash';
 import { ILogger, ExtendedError, LoggerWrapper } from '@ts-core/common';
+import * as _ from 'lodash';
 
 export abstract class DefaultController<U, V> extends LoggerWrapper {
     // --------------------------------------------------------------------------

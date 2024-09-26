@@ -85,7 +85,7 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings, ITransportC
             throw new ExtendedError(`Unable to connect: settings is nil`);
         }
         if (!_.isNumber(this.settings.reconnectDelay)) {
-            this.settings.reconnectDelay = DateUtil.MILISECONDS_SECOND;
+            this.settings.reconnectDelay = DateUtil.MILLISECONDS_SECOND;
         }
         if (!_.isNumber(this.settings.reconnectMaxAttempts)) {
             this.settings.reconnectMaxAttempts = 10;

@@ -1,7 +1,7 @@
-import * as dotenv from 'dotenv';
-import * as fs from 'fs';
 import { AbstractSettingsStorage } from '@ts-core/common';
 import { IModeSettings, Mode } from './IModeSettings';
+import * as dotenv from 'dotenv';
+import * as fs from 'fs';
 
 export class EnvSettingsStorage extends AbstractSettingsStorage implements IModeSettings {
     // --------------------------------------------------------------------------

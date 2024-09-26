@@ -1,6 +1,6 @@
 import { IDestroyable, ILogger, LoggerWrapper } from '@ts-core/common';
-import * as _ from 'lodash';
 import { IModeSettings } from '../settings';
+import * as _ from 'lodash';
 
 export class ModeApplication<T extends IModeSettings = IModeSettings> extends LoggerWrapper implements IDestroyable {
     // --------------------------------------------------------------------------
