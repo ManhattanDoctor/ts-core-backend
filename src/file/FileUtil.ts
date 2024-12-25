@@ -1,8 +1,8 @@
 import { PromiseHandler } from '@ts-core/common';
 import { createHash, BinaryToTextEncoding } from 'crypto';
 import axios from 'axios';
-import * as _ from 'lodash';
 import * as fs from 'fs';
+import * as _ from 'lodash';
 
 export class FileUtil {
     // --------------------------------------------------------------------------
