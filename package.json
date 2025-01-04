@@ -1,6 +1,6 @@
 {
     "name": "@ts-core/backend",
-    "version": "3.0.23",
+    "version": "3.0.22",
     "description": "Classes and utils for backend",
     "scripts": {},
     "author": {
@@ -15,6 +15,7 @@
             "require": "./cjs/public-api.js"
         }
     },
+
     "license": "ISC",
     "dependencies": {
         "@ts-core/common": "~3.0.56",
