@@ -5,22 +5,19 @@ import {
     IFilterable,
     IPaginable,
     IPagination,
-    ObjectUtil,
     ValidateUtil,
     ExtendedError,
     PromiseHandler,
     IsFilterableCondition,
     IFilterableCondition,
     IFilterableConditionValue,
-    FilterableDataType,
-    ToFilterableCondition
+    IFilterableProperties
 } from '@ts-core/common';
 import { ValidatorOptions } from 'class-validator';
-import { DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder } from 'typeorm';
-import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual } from 'typeorm';
+import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual, DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder } from 'typeorm';
 import { format } from 'date-fns';
-import * as fs from 'fs';
 import * as _ from 'lodash';
+import * as fs from 'fs';
 
 export class TypeormUtil {
     // --------------------------------------------------------------------------
@@ -71,14 +68,15 @@ export class TypeormUtil {
     //
     // --------------------------------------------------------------------------
 
-    public static applyFilters<U, T>(query: SelectQueryBuilder<U>, filters: IFilterable<T>): SelectQueryBuilder<U> {
-        if (ObjectUtil.instanceOf(filters, ['conditions'])) {
-            TypeormUtil.applyConditions(query, filters.conditions);
-        }
-        if (ObjectUtil.instanceOf(filters, ['sort'])) {
-            TypeormUtil.applySort(query, filters.sort);
-        }
+    public static applyFilterProperties<U, T>(query: SelectQueryBuilder<U>, properties: IFilterableProperties<T>): SelectQueryBuilder<U> {
+        TypeormUtil.applySort(query, properties?.sort);
+        TypeormUtil.applyConditions(query, properties?.conditions);
         return query;
+    }
+
+    // TODO: deprecated, need to be removed in next version
+    public static applyFilters<U, T>(query: SelectQueryBuilder<U>, properties: IFilterableProperties<T>): SelectQueryBuilder<U> {
+        return TypeormUtil.applyFilterProperties(query, properties);
     }
 
     public static applySort<U, T>(query: SelectQueryBuilder<U>, sort: FilterableSort<T>, alias?: string): SelectQueryBuilder<U> {
@@ -144,9 +142,9 @@ export class TypeormUtil {
         return query;
     }
 
-    public static async toPagination<U, V, T>(query: SelectQueryBuilder<U>, params: IPaginable<T>, transform: (item: U) => Promise<V>, isApplyFilters: boolean = true): Promise<IPagination<V>> {
-        if (isApplyFilters) {
-            query = TypeormUtil.applyFilters(query, params);
+    public static async toPagination<U, V, T>(query: SelectQueryBuilder<U>, params: IPaginable<T>, transform: (item: U) => Promise<V>, isApplyFilterProperties: boolean = true): Promise<IPagination<V>> {
+        if (isApplyFilterProperties) {
+            query = TypeormUtil.applyFilterProperties(query, params);
         }
 
         query = query.skip(params.pageSize * params.pageIndex).take(params.pageSize);
@@ -158,7 +156,7 @@ export class TypeormUtil {
     }
 
     public static async toFilterable<U, V, T>(query: SelectQueryBuilder<U>, params: IFilterable<T>, transform: (item: U) => Promise<V>): Promise<Array<V>> {
-        query = TypeormUtil.applyFilters(query, params);
+        query = TypeormUtil.applyFilterProperties(query, params);
 
         let many = await query.getMany();
         return Promise.all(many.map(item => transform(item)));
@@ -176,7 +174,7 @@ export class TypeormUtil {
         }
     }
 
-    public static async databaseClear(data: DataSource, name: string): Promise<void> {
+    public static async databaseClear(data: DataSource): Promise<void> {
         await data.synchronize(true);
     }
 
@@ -220,7 +218,7 @@ export class TypeormUtil {
     // --------------------------------------------------------------------------
 
     private static isErrorCode(error: any, code: any): boolean {
-        return error && error.code === code;
+        return error?.code === code;
     }
 }
 
