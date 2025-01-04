@@ -68,15 +68,15 @@ export class TypeormUtil {
     //
     // --------------------------------------------------------------------------
 
-    public static applyFilterProperties<U, T>(query: SelectQueryBuilder<U>, properties: IFilterableProperties<T>): SelectQueryBuilder<U> {
-        TypeormUtil.applySort(query, properties?.sort);
-        TypeormUtil.applyConditions(query, properties?.conditions);
+    public static applyFilterProperties<U, T>(query: SelectQueryBuilder<U>, properties: IFilterableProperties<T>, alias?: string): SelectQueryBuilder<U> {
+        TypeormUtil.applySort(query, properties?.sort, alias);
+        TypeormUtil.applyConditions(query, properties?.conditions, alias);
         return query;
     }
 
     // TODO: deprecated, need to be removed in next version
-    public static applyFilters<U, T>(query: SelectQueryBuilder<U>, properties: IFilterableProperties<T>): SelectQueryBuilder<U> {
-        return TypeormUtil.applyFilterProperties(query, properties);
+    public static applyFilters<U, T>(query: SelectQueryBuilder<U>, properties: IFilterableProperties<T>, alias?: string): SelectQueryBuilder<U> {
+        return TypeormUtil.applyFilterProperties(query, properties, alias);
     }
 
     public static applySort<U, T>(query: SelectQueryBuilder<U>, sort: FilterableSort<T>, alias?: string): SelectQueryBuilder<U> {
