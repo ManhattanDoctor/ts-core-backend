@@ -4,7 +4,8 @@ export * from './controller/DefaultController';
 //
 export * from './database/typeorm/TypeormDecimalTransformer';
 export * from './database/typeorm/TypeormDateEpochTransformer';
-export * from './database/typeorm/TypeormJSONTransformer';
+export * from './database/typeorm/TypeormJsonTransformer';
+export * from './database/typeorm/TypeormJsonArrayTransformer';
 export * from './database/typeorm/TypeormUtil';
 export * from './database/typeorm/TypeormValidableEntity';
 //
