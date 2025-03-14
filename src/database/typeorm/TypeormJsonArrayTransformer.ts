@@ -1,6 +1,6 @@
 import { ValueTransformer } from 'typeorm';
+import { TypeormJsonTransformer } from './TypeormJsonTransformer2';
 import * as _ from 'lodash';
-import { TypeormJsonTransformer } from './TypeormJSONTransformer1';
 
 export class TypeormJsonArrayTransformer implements ValueTransformer {
     // --------------------------------------------------------------------------
