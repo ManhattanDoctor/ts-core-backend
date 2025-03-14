@@ -97,7 +97,7 @@ export class TypeormUtil {
             return query;
         }
         for (let key of Object.keys(conditions)) {
-            query = TypeormUtil.applyCondition(query, key, conditions[key], alias);
+            TypeormUtil.applyCondition(query, key, conditions[key], alias);
         }
         return query;
     }
@@ -144,22 +144,24 @@ export class TypeormUtil {
 
     public static async toPagination<U, V, T>(query: SelectQueryBuilder<U>, params: IPaginable<T>, transform: (item: U) => Promise<V>, isApplyFilterProperties: boolean = true): Promise<IPagination<V>> {
         if (isApplyFilterProperties) {
-            query = TypeormUtil.applyFilterProperties(query, params);
+            TypeormUtil.applyFilterProperties(query, params);
         }
 
-        query = query.skip(params.pageSize * params.pageIndex).take(params.pageSize);
+        let { pageSize, pageIndex } = params;
+        query.skip(pageSize * pageIndex).take(pageSize);
 
         let [many, total] = await query.getManyAndCount();
+        let pages = Math.ceil(total / pageSize);
         let items = await Promise.all(many.map(item => transform(item)));
-        let pages = Math.ceil(total / params.pageSize);
-        return { items, pages, total, pageSize: params.pageSize, pageIndex: params.pageIndex };
+        return { items, total, pageSize, pageIndex, pages };
     }
 
-    public static async toFilterable<U, V, T>(query: SelectQueryBuilder<U>, params: IFilterable<T>, transform: (item: U) => Promise<V>): Promise<Array<V>> {
-        query = TypeormUtil.applyFilterProperties(query, params);
-
-        let many = await query.getMany();
-        return Promise.all(many.map(item => transform(item)));
+    public static async toFilterable<U, V, T>(query: SelectQueryBuilder<U>, params: IFilterable<T>, transform: (item: U) => Promise<V>, isApplyFilterProperties: boolean = true): Promise<Array<V>> {
+        if (isApplyFilterProperties) {
+            TypeormUtil.applyFilterProperties(query, params);
+        }
+        let items = await query.getMany();
+        return Promise.all(items.map(item => transform(item)));
     }
 
     // --------------------------------------------------------------------------

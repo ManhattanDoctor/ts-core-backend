@@ -1,14 +1,14 @@
 import { ValueTransformer } from 'typeorm';
 import * as _ from 'lodash';
 
-export class TypeormJSONTransformer implements ValueTransformer {
+export class TypeormJsonTransformer implements ValueTransformer {
     // --------------------------------------------------------------------------
     //
     //  Properties
     //
     // --------------------------------------------------------------------------
 
-    private static _instance: TypeormJSONTransformer;
+    private static _instance: TypeormJsonTransformer;
 
     // --------------------------------------------------------------------------
     //
@@ -16,11 +16,11 @@ export class TypeormJSONTransformer implements ValueTransformer {
     //
     // --------------------------------------------------------------------------
 
-    public static get instance(): TypeormJSONTransformer {
-        if (_.isNil(TypeormJSONTransformer._instance)) {
-            TypeormJSONTransformer._instance = new TypeormJSONTransformer();
+    public static get instance(): TypeormJsonTransformer {
+        if (_.isNil(TypeormJsonTransformer._instance)) {
+            TypeormJsonTransformer._instance = new TypeormJsonTransformer();
         }
-        return TypeormJSONTransformer._instance;
+        return TypeormJsonTransformer._instance;
     }
 
     // --------------------------------------------------------------------------
