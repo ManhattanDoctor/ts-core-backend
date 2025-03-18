@@ -34,11 +34,11 @@ export class TypeormJsonClassTransformer<T> implements ValueTransformer {
 
     public from(item: string): Array<T> {
         let value = TypeormJsonTransformer.from<Array<any>>(item);
-        return !_.isNil(value) ? value.map(this.fromTransform) : null;
+        return _.isArray(value) ? value.map(this.fromTransform) : null;
     }
 
     public to(item: Array<T>): string {
-        return TypeormJsonTransformer.to(item.map(this.toTransform));
+        return _.isArray(item) ? TypeormJsonTransformer.to(item.map(this.toTransform)) : null;
     }
 }
 
