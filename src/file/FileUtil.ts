@@ -1,6 +1,5 @@
 import { PromiseHandler } from '@ts-core/common';
-import { createHash, BinaryToTextEncoding } from 'crypto';
-// import { access } from 'node:fs/promises';
+import { createHash, BinaryToTextEncoding, BinaryLike } from 'crypto';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as _ from 'lodash';
@@ -136,25 +135,22 @@ export class FileUtil {
     //
     // --------------------------------------------------------------------------
 
-    public static async hashByUrl(url: string, algorithm?: string, digest?: BinaryToTextEncoding): Promise<string> {
+    public static async hash(binary: BinaryLike, algorithm?: string, digest?: BinaryToTextEncoding): Promise<string> {
         if (_.isNil(algorithm)) {
             algorithm = 'md5';
         }
         if (_.isNil(digest)) {
             digest = 'hex';
         }
+        return createHash(algorithm).update(binary).digest(digest);
+    }
+
+    public static async hashByUrl(url: string, algorithm?: string, digest?: BinaryToTextEncoding): Promise<string> {
         let { data } = await axios.get(url, { responseType: 'arraybuffer' });
-        return createHash(algorithm).update(data).digest(digest);
+        return FileUtil.hash(data, algorithm, digest);
     }
 
     public static async hashByPath(path: string, algorithm?: string, digest?: BinaryToTextEncoding): Promise<string> {
-        if (_.isNil(algorithm)) {
-            algorithm = 'md5';
-        }
-        if (_.isNil(digest)) {
-            digest = 'hex';
-        }
-        let file = await FileUtil.read(path, 'binary')
-        return createHash(algorithm).update(file).digest(digest);
+        return FileUtil.hash(await FileUtil.read(path, 'binary'), algorithm, digest);
     }
 }
