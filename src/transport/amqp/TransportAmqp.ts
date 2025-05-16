@@ -157,7 +157,7 @@ export class TransportAmqp extends Transport<ITransportAmqpSettings, ITransportC
         let handler = PromiseHandler.create<V, ExtendedError>();
         this.promises.set(command.id, { command, handler, options });
         await this.requestSend(command, options, true);
-        this.commandTimeout(command, options);
+        this.commandTimeoutAdd(command, options);
 
         return handler.promise;
     }

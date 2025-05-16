@@ -1,5 +1,6 @@
 import { PromiseHandler } from '@ts-core/common';
 import { createHash, BinaryToTextEncoding } from 'crypto';
+// import { access } from 'node:fs/promises';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as _ from 'lodash';
@@ -11,10 +12,12 @@ export class FileUtil {
     //
     // --------------------------------------------------------------------------
 
-    public static async isExists(path: string): Promise<boolean> {
+    public static async isExists(path: string, mode?: number): Promise<boolean> {
+        // await access(path, mode)
         let promise = PromiseHandler.create();
         fs.exists(path, value => promise.resolve(value));
         return promise.promise;
+
     }
 
     public static isExistsSync(path: string): boolean {
@@ -27,7 +30,7 @@ export class FileUtil {
     //
     // --------------------------------------------------------------------------
 
-    public static async remove(path: string): Promise<void> {
+    public static remove(path: string): Promise<void> {
         let promise = PromiseHandler.create();
         fs.unlink(path, error => {
             if (!_.isNil(error)) {
@@ -49,7 +52,7 @@ export class FileUtil {
     //
     // --------------------------------------------------------------------------
 
-    public static async read(path: string, encoding: BufferEncoding): Promise<string> {
+    public static read(path: string, encoding: BufferEncoding): Promise<string> {
         let promise = PromiseHandler.create();
         fs.readFile(path, { encoding }, (error, data) => {
             if (!_.isNil(error)) {
@@ -71,7 +74,7 @@ export class FileUtil {
     //
     // --------------------------------------------------------------------------
 
-    public static async save<T>(path: string, data: T, encoding: BufferEncoding): Promise<T> {
+    public static save<T>(path: string, data: T, encoding: BufferEncoding): Promise<T> {
         let promise = PromiseHandler.create<T>();
         fs.writeFile(path, data as any, encoding, error => {
             if (!_.isNil(error)) {
@@ -83,7 +86,7 @@ export class FileUtil {
         return promise.promise;
     }
 
-    public static async saveSync<T>(path: string, data: T, encoding: BufferEncoding): Promise<T> {
+    public static saveSync<T>(path: string, data: T, encoding: BufferEncoding): T {
         fs.writeFileSync(path, data as any, encoding);
         return data;
     }
@@ -109,9 +112,9 @@ export class FileUtil {
     //
     // --------------------------------------------------------------------------
 
-    public static async directoryCreate(path: string): Promise<void> {
+    public static directoryCreate(path: string, options?: fs.Mode | fs.MakeDirectoryOptions): Promise<void> {
         let promise = PromiseHandler.create();
-        fs.mkdir(path, error => {
+        fs.mkdir(path, options, error => {
             if (!_.isNil(error)) {
                 promise.reject(error.message);
             } else {
@@ -119,6 +122,12 @@ export class FileUtil {
             }
         });
         return promise.promise;
+    }
+
+    public static async directoryCreateIfNeed(path: string, options?: fs.Mode | fs.MakeDirectoryOptions): Promise<void> {
+        if (!await FileUtil.isExists(path)) {
+            await FileUtil.directoryCreate(path, options);
+        }
     }
 
     // --------------------------------------------------------------------------
