@@ -11,7 +11,8 @@ import {
     IsFilterableCondition,
     IFilterableCondition,
     IFilterableConditionValue,
-    IFilterableProperties
+    IFilterableProperties,
+    FilterableConditionUnion
 } from '@ts-core/common';
 import { ValidatorOptions } from 'class-validator';
 import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual, DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder } from 'typeorm';
@@ -138,7 +139,12 @@ export class TypeormUtil {
         if (!_.isEmpty(conditionKey)) {
             where += ` ${conditionKey}`;
         }
-        query.andWhere(where, parameters);
+        switch (value.union) {
+            case FilterableConditionUnion.OR:
+                query.orWhere(where, parameters);
+            default:
+                query.andWhere(where, parameters);
+        }
         return query;
     }
 
