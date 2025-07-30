@@ -115,7 +115,7 @@ export class TypeormUtil {
             key = name.toString();
         }
 
-        let property = `${alias}.${name.toString}`;
+        let property = `${alias}.${name.toString()}`;
         let conditionKey = `:${key}`;
 
         if (!IsFilterableCondition(value)) {
