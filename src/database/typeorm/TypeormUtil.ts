@@ -35,7 +35,7 @@ export class TypeormUtil {
     //
     // --------------------------------------------------------------------------
 
-    private static getCondition(item: FilterableConditionType): string {
+    public static getCondition(item: FilterableConditionType): string {
         switch (item) {
             case FilterableConditionType.EQUAL:
                 return '=';
@@ -98,12 +98,12 @@ export class TypeormUtil {
             return query;
         }
         for (let key of Object.keys(conditions)) {
-            TypeormUtil.applyCondition(query, key, conditions[key], alias);
+            TypeormUtil.applyCondition(query, key, conditions[key], alias, key);
         }
         return query;
     }
 
-    public static applyCondition<U, T>(query: SelectQueryBuilder<U>, name: keyof T, value: IFilterableConditionValue<T> | IFilterableCondition<T>, alias?: string): SelectQueryBuilder<U> {
+    public static applyCondition<U, T>(query: SelectQueryBuilder<U>, name: keyof T, value: IFilterableConditionValue<T> | IFilterableCondition<T>, alias?: string, key?: string): SelectQueryBuilder<U> {
         if (_.isEmpty(name) || _.isNil(value)) {
             return query;
         }
@@ -111,9 +111,11 @@ export class TypeormUtil {
         if (_.isEmpty(alias)) {
             alias = query.alias;
         }
+        if (_.isEmpty(key)) {
+            key = name.toString();
+        }
 
-        let key = name.toString();
-        let property = `${alias}.${key}`;
+        let property = `${alias}.${name.toString}`;
         let conditionKey = `:${key}`;
 
         if (!IsFilterableCondition(value)) {
@@ -134,7 +136,7 @@ export class TypeormUtil {
                 break;
         }
 
-        let condition = this.getCondition(value.condition);
+        let condition = TypeormUtil.getCondition(value.condition);
         let where = `${property} ${condition}`;
         if (!_.isEmpty(conditionKey)) {
             where += ` ${conditionKey}`;
