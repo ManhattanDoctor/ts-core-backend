@@ -6,6 +6,7 @@ export interface IModeSettings {
 }
 
 export enum Mode {
+    DEMO = 'demo',
     TESTING = 'testing',
     PRODUCTION = 'production',
     DEVELOPMENT = 'development'
