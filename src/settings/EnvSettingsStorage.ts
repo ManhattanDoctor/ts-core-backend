@@ -72,8 +72,8 @@ export class EnvSettingsStorage extends AbstractSettingsStorage implements IMode
         return this.mode === Mode.DEMO;
     }
     
-    public get isTesting(): boolean {
-        return this.mode === Mode.TESTING;
+    public get isTest(): boolean {
+        return this.mode === Mode.TEST;
     }
 
     public get isProduction(): boolean {

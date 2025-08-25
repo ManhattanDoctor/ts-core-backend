@@ -31,8 +31,8 @@ export class ModeApplication<T extends IModeSettings = IModeSettings> extends Lo
     // --------------------------------------------------------------------------
 
     public async onApplicationBootstrap(): Promise<void> {
-        let method = this.settings.isTesting ? this.warn : this.log;
-        method.call(this, `"${this.name}" service started in ${this.settings.mode} mode`);
+        let method = this.settings.isTest ? this.warn : this.log;
+        method.call(this, `"${this.name}" service started in "${this.settings.mode}" mode`);
     }
 
     public destroy(): void {

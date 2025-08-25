@@ -1,14 +1,14 @@
 export interface IModeSettings {
     readonly mode: Mode;
     readonly isDemo: boolean;
-    readonly isTesting: boolean;
+    readonly isTest: boolean;
     readonly isProduction: boolean;
     readonly isDevelopment: boolean;
 }
 
 export enum Mode {
     DEMO = 'demo',
-    TESTING = 'testing',
+    TEST = 'test',
     PRODUCTION = 'production',
     DEVELOPMENT = 'development'
 }
