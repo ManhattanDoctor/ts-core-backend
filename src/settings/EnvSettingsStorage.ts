@@ -61,7 +61,7 @@ export class EnvSettingsStorage extends AbstractSettingsStorage implements IMode
     // --------------------------------------------------------------------------
 
     public get mode(): Mode {
-        return this.getValue('NODE_ENV');
+        return this.getValue('NODE_ENV', Mode.DEVELOPMENT);
     }
 
     public get fileName(): string {
@@ -71,7 +71,7 @@ export class EnvSettingsStorage extends AbstractSettingsStorage implements IMode
     public get isDemo(): boolean {
         return this.mode === Mode.DEMO;
     }
-    
+
     public get isTest(): boolean {
         return this.mode === Mode.TEST;
     }

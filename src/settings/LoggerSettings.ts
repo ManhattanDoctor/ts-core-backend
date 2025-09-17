@@ -19,6 +19,6 @@ export class LoggerSettings extends EnvSettingsStorage implements ILoggerSetting
     // --------------------------------------------------------------------------
 
     public get loggerLevel(): LoggerLevel {
-        return this.getValue('LOGGER_LEVEL', LoggerLevel.ALL);
+        return this.getValue('LOGGER_LEVEL', LoggerLevel.LOG);
     }
 }
