@@ -1,6 +1,6 @@
 import { ValueTransformer } from "typeorm";
-import { TypeormJsonTransformer } from "./TypeormJsonTransformer";
 import { TransformUtil } from "@ts-core/common";
+import { TypeormJsonTransformer } from "./TypeormJsonTransformer";
 import * as _ from 'lodash';
 
 export class TypeormJsonClassTransformer<T> implements ValueTransformer {
@@ -32,15 +32,14 @@ export class TypeormJsonClassTransformer<T> implements ValueTransformer {
     //
     // --------------------------------------------------------------------------
 
-    public from(item: string): Array<T> {
-        let value = TypeormJsonTransformer.from<Array<any>>(item);
-        return _.isArray(value) ? value.map(this.fromTransform) : null;
+    public from(item: string): T {
+        return this.fromTransform(TypeormJsonTransformer.from(item));
     }
 
-    public to(item: Array<T>): string {
-        return _.isArray(item) ? TypeormJsonTransformer.to(item.map(this.toTransform)) : null;
+    public to(item: T): string {
+        return TypeormJsonTransformer.to(this.toTransform(item));
     }
 }
 
-export type ClassToTransform<T> = (item: any) => T;
-export type ClassFromTransform<T> = (item: T) => any;
+export type ClassToTransform<T> = (item: T) => any;
+export type ClassFromTransform<T> = (item: any) => T;

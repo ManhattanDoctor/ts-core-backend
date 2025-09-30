@@ -6,6 +6,7 @@ export * from './database/typeorm/TypeormDecimalTransformer';
 export * from './database/typeorm/TypeormDateEpochTransformer';
 export * from './database/typeorm/TypeormJsonTransformer';
 export * from './database/typeorm/TypeormJsonClassTransformer';
+export * from './database/typeorm/TypeormJsonArrayClassTransformer';
 export * from './database/typeorm/TypeormUtil';
 export * from './database/typeorm/TypeormValidableEntity';
 //
