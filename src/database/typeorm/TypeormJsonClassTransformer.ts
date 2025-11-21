@@ -32,11 +32,11 @@ export class TypeormJsonClassTransformer<T> implements ValueTransformer {
     //
     // --------------------------------------------------------------------------
 
-    public from(item: string): T {
+    public from(item: string | T): T {
         return this.fromTransform(TypeormJsonTransformer.from(item));
     }
 
-    public to(item: T): string {
+    public to(item: T): T {
         return TypeormJsonTransformer.to(this.toTransform(item));
     }
 }

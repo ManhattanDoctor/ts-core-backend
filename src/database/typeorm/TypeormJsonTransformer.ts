@@ -8,12 +8,12 @@ export class TypeormJsonTransformer implements ValueTransformer {
     //
     // --------------------------------------------------------------------------
 
-    public static from<T>(item: string): T {
-        return !_.isNil(item) ? JSON.parse(item) : null;
+    public static from<T>(item: string | T): T {
+        return !_.isNil(item) ? _.isString(item) ? JSON.parse(item) : item : null;
     }
 
-    public static to<T>(item: T): string {
-        return !_.isNil(item) ? JSON.stringify(item) : null;
+    public static to<T>(item: T): T {
+        return !_.isNil(item) ? item : null;
     }
 
     // --------------------------------------------------------------------------
@@ -22,11 +22,11 @@ export class TypeormJsonTransformer implements ValueTransformer {
     //
     // --------------------------------------------------------------------------
 
-    public from<T>(item: string): T {
+    public from<T>(item: string | T): T {
         return TypeormJsonTransformer.from(item);
     }
 
-    public to<T>(item: T): string {
+    public to<T>(item: T): T {
         return TypeormJsonTransformer.to(item);
     }
 }
