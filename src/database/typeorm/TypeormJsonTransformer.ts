@@ -8,7 +8,7 @@ export class TypeormJsonTransformer implements ValueTransformer {
     //
     // --------------------------------------------------------------------------
 
-    public static from<T>(item: string | T): T {
+    public static from<T>(item: T): T {
         return !_.isNil(item) ? _.isString(item) ? JSON.parse(item) : item : null;
     }
 
@@ -22,7 +22,7 @@ export class TypeormJsonTransformer implements ValueTransformer {
     //
     // --------------------------------------------------------------------------
 
-    public from<T>(item: string | T): T {
+    public from<T>(item: T): T {
         return TypeormJsonTransformer.from(item);
     }
 

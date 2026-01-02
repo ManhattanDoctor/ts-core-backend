@@ -2,8 +2,21 @@
 
 [![npm version](https://badge.fury.io/js/%40ts-core%2Fbackend.svg)](https://badge.fury.io/js/%40ts-core%2Fbackend)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-**@ts-core/backend** — это модульная TypeScript-библиотека для построения серверных приложений с поддержкой микросервисной архитектуры, работы с базами данных, обмена сообщениями и централизованного управления настройками.
+**@ts-core/backend** — модульная TypeScript-библиотека для построения серверных приложений с поддержкой микросервисной архитектуры, работы с базами данных через TypeORM, обмена сообщениями через AMQP/RabbitMQ и централизованного управления настройками через переменные окружения.
+
+## Содержание
+
+- [Возможности](#-возможности)
+- [Установка](#-установка)
+- [Быстрый старт](#-быстрый-старт)
+- [Архитектура](#️-архитектура)
+- [API Reference](#-api-reference)
+- [Конфигурация](#-конфигурация)
+- [Примеры использования](#-примеры-использования)
+- [Разработка](#️-разработка)
+- [Зависимости](#-зависимости)
 
 ## 🚀 Возможности
 
@@ -19,6 +32,55 @@
 
 ```bash
 npm install @ts-core/backend
+```
+
+### Peer Dependencies
+
+```bash
+npm install @ts-core/common typeorm amqplib
+```
+
+## 🚀 Быстрый старт
+
+```typescript
+import {
+    ModeApplication,
+    EnvSettingsStorage,
+    TransportAmqp,
+    TypeormUtil
+} from '@ts-core/backend';
+import { Logger } from '@ts-core/common';
+
+// 1. Настройки из .env
+class Settings extends EnvSettingsStorage {
+    get amqpHost() { return this.getValue('AMQP_HOST', 'localhost'); }
+    get amqpPort() { return this.getValue('AMQP_PORT', 5672); }
+    get amqpUserName() { return this.getValue('AMQP_USER', 'guest'); }
+    get amqpPassword() { return this.getValue('AMQP_PASSWORD', 'guest'); }
+    get amqpProtocol() { return this.getValue('AMQP_PROTOCOL', 'amqp'); }
+}
+
+// 2. Приложение
+class App extends ModeApplication {
+    private transport: TransportAmqp;
+
+    constructor() {
+        const settings = new Settings();
+        super('MyService', settings, new Logger(settings.mode));
+    }
+
+    async onApplicationBootstrap() {
+        await super.onApplicationBootstrap();
+
+        // Подключение к RabbitMQ
+        this.transport = new TransportAmqp(this.logger, this.settings);
+        await this.transport.connect();
+
+        this.log('Service ready!');
+    }
+}
+
+new App().onApplicationBootstrap();
 ```
 
 ## 🏗️ Архитектура
@@ -174,6 +236,237 @@ transport.listen('user.create').subscribe(command => {
 });
 ```
 
+## 📖 API Reference
+
+### TypeORM Transformers
+
+#### TypeormDecimalTransformer
+
+Преобразует строковые значения decimal из PostgreSQL в числа JavaScript.
+
+```typescript
+import { TypeormDecimalTransformer } from '@ts-core/backend';
+import { Column, Entity } from 'typeorm';
+
+@Entity()
+class Product {
+    @Column({
+        type: 'decimal',
+        precision: 10,
+        scale: 2,
+        transformer: TypeormDecimalTransformer.instance
+    })
+    price: number;
+}
+```
+
+#### TypeormDateEpochTransformer
+
+Преобразует даты в Unix timestamp (миллисекунды) и обратно.
+
+```typescript
+import { TypeormDateEpochTransformer } from '@ts-core/backend';
+
+@Entity()
+class Event {
+    @Column({
+        type: 'bigint',
+        transformer: TypeormDateEpochTransformer.instance
+    })
+    scheduledAt: Date;
+}
+```
+
+#### TypeormJsonTransformer
+
+Сериализует/десериализует JSON-поля.
+
+```typescript
+import { TypeormJsonTransformer } from '@ts-core/backend';
+
+@Entity()
+class User {
+    @Column({
+        type: 'jsonb',
+        transformer: new TypeormJsonTransformer()
+    })
+    metadata: Record<string, any>;
+}
+```
+
+#### TypeormJsonClassTransformer
+
+Преобразует JSON в экземпляры классов с использованием `class-transformer`.
+
+```typescript
+import { TypeormJsonClassTransformer } from '@ts-core/backend';
+import { TransformUtil } from '@ts-core/common';
+
+class Address {
+    city: string;
+    street: string;
+}
+
+@Entity()
+class User {
+    @Column({
+        type: 'jsonb',
+        transformer: new TypeormJsonClassTransformer(
+            (item) => TransformUtil.toClass(Address, item)
+        )
+    })
+    address: Address;
+}
+```
+
+#### TypeormJsonArrayClassTransformer
+
+Преобразует массивы JSON в массивы экземпляров классов.
+
+```typescript
+import { TypeormJsonArrayClassTransformer } from '@ts-core/backend';
+
+@Entity()
+class Order {
+    @Column({
+        type: 'jsonb',
+        transformer: new TypeormJsonArrayClassTransformer(
+            (item) => TransformUtil.toClass(OrderItem, item)
+        )
+    })
+    items: OrderItem[];
+}
+```
+
+### TypeormUtil
+
+Утилиты для работы с запросами TypeORM.
+
+#### Методы
+
+| Метод | Описание |
+|-------|----------|
+| `applyFilterProperties(query, properties, alias?)` | Применяет фильтры и сортировку к запросу |
+| `applySort(query, sort, alias?)` | Применяет сортировку |
+| `applyConditions(query, conditions, alias?)` | Применяет условия фильтрации |
+| `applyCondition(query, name, value, alias?, key?)` | Применяет одно условие |
+| `toPagination(query, params, transform)` | Возвращает пагинированный результат |
+| `toFilterable(query, params, transform)` | Возвращает отфильтрованный массив |
+| `isUniqueError(error)` | Проверяет ошибку уникальности PostgreSQL |
+| `isSerializationError(error)` | Проверяет ошибку сериализации |
+| `validateEntity(entity, options?, code?)` | Валидирует сущность |
+| `clearEntities(dataSource)` | Очищает все таблицы |
+| `databaseClear(dataSource)` | Синхронизирует схему (drop + create) |
+
+#### Пример пагинации
+
+```typescript
+import { TypeormUtil } from '@ts-core/backend';
+
+async function getUsers(params: IPaginable<User>): Promise<IPagination<UserDto>> {
+    const query = dataSource
+        .getRepository(User)
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.profile', 'profile');
+
+    return TypeormUtil.toPagination(
+        query,
+        params,
+        async (user) => new UserDto(user)
+    );
+}
+```
+
+### TransportAmqp
+
+AMQP транспорт для микросервисной коммуникации.
+
+#### Конфигурация
+
+```typescript
+interface ITransportAmqpSettings {
+    // Обязательные
+    amqpHost: string;
+    amqpPort: number;
+    amqpUserName: string;
+    amqpPassword: string;
+    amqpProtocol: string;
+
+    // Опциональные
+    amqpVhost?: string;                      // default: undefined
+    amqpQueuePrefix?: string;                // default: 'AMQP'
+    reconnectDelay?: number;                 // default: 1000ms
+    reconnectMaxAttempts?: number;           // default: 10
+    isDisconnectOnChannelClose?: boolean;    // default: true
+    isExitApplicationOnDisconnect?: boolean; // default: true
+    timeout?: number;                        // default: 30000ms
+}
+```
+
+#### Методы
+
+| Метод | Описание |
+|-------|----------|
+| `connect()` | Подключение к брокеру |
+| `disconnect(error?)` | Отключение от брокера |
+| `send(command, options?)` | Отправка команды без ожидания ответа |
+| `sendListen(command, options?)` | Отправка команды с ожиданием ответа |
+| `listen(name)` | Подписка на команды |
+| `complete(command, result?)` | Завершение обработки команды |
+| `wait(command)` | Отложить обработку команды |
+| `dispatch(event)` | Публикация события |
+| `purge(command)` | Очистка очереди команды |
+| `check(command)` | Проверка состояния очереди |
+| `destroy()` | Уничтожение транспорта |
+
+#### Пример: Producer/Consumer
+
+```typescript
+// Producer (отправитель)
+const transport = new TransportAmqp(logger, settings);
+await transport.connect();
+
+// Fire-and-forget
+transport.send(new NotifyUserCommand({ userId: 1, message: 'Hello' }));
+
+// Request-response
+const user = await transport.sendListen(new GetUserCommand({ id: 1 }));
+
+// Consumer (получатель)
+transport.listen<INotifyUserCommand>('NotifyUserCommand').subscribe(command => {
+    try {
+        await sendNotification(command.request);
+        transport.complete(command);
+    } catch (error) {
+        transport.complete(command, error);
+    }
+});
+```
+
+### FileUtil
+
+Утилиты для работы с файловой системой.
+
+#### Методы
+
+| Метод | Описание |
+|-------|----------|
+| `isExists(path)` | Проверка существования файла |
+| `isExistsSync(path)` | Синхронная проверка существования |
+| `read(path, encoding)` | Чтение файла |
+| `readSync(path, encoding)` | Синхронное чтение |
+| `save(path, data, encoding)` | Запись файла |
+| `saveSync(path, data, encoding)` | Синхронная запись |
+| `remove(path)` | Удаление файла |
+| `removeSync(path)` | Синхронное удаление |
+| `jsonRead(path, encoding?)` | Чтение JSON файла |
+| `jsonSave(path, data, encoding?)` | Запись JSON файла |
+| `directoryCreate(path, options?)` | Создание директории |
+| `directoryCreateIfNeed(path, options?)` | Создание директории если не существует |
+| `hash(binary, algorithm?, digest?)` | Хэширование данных |
+| `hashByUrl(url, algorithm?, digest?)` | Хэширование по URL |
+| `hashByPath(path, algorithm?, digest?)` | Хэширование файла |
+
 ## 🔧 Конфигурация
 
 ### Переменные окружения
@@ -298,11 +591,76 @@ make publish_major    # major версия
 
 ## 📋 Зависимости
 
-- `@ts-core/common` — общие утилиты и интерфейсы
-- `typeorm` — ORM для работы с базами данных
-- `amqplib` — клиент для AMQP (RabbitMQ)
-- `dotenv` — загрузка переменных окружения
-- `date-fns` — работа с датами
+### Runtime Dependencies
+
+| Пакет | Версия | Назначение |
+|-------|--------|------------|
+| `@ts-core/common` | ~3.0.62 | Общие утилиты, интерфейсы, базовые классы |
+| `typeorm` | ^0.3.7 | ORM для работы с базами данных |
+| `amqplib` | ^0.8.0 | Клиент для AMQP (RabbitMQ) |
+| `dotenv` | ^14.2.0 | Загрузка переменных окружения |
+| `date-fns` | ^2.28.0 | Работа с датами |
+
+### Dev Dependencies
+
+| Пакет | Версия | Назначение |
+|-------|--------|------------|
+| `@types/amqplib` | ^0.8.2 | TypeScript типы для amqplib |
+| `gulp-npm-module-publisher` | ^3.0.5 | Публикация пакета |
+
+## 📁 Структура проекта
+
+```
+src/
+├── application/           # Базовые классы приложений
+│   └── ModeApplication.ts
+├── controller/            # Абстрактные контроллеры
+│   └── DefaultController.ts
+├── database/
+│   └── typeorm/           # TypeORM интеграция
+│       ├── TypeormDecimalTransformer.ts
+│       ├── TypeormDateEpochTransformer.ts
+│       ├── TypeormJsonTransformer.ts
+│       ├── TypeormJsonClassTransformer.ts
+│       ├── TypeormJsonArrayClassTransformer.ts
+│       ├── TypeormValidableEntity.ts
+│       └── TypeormUtil.ts
+├── file/                  # Утилиты для работы с файлами
+│   └── FileUtil.ts
+├── settings/              # Интерфейсы и классы настроек
+│   ├── EnvSettingsStorage.ts
+│   ├── LoggerSettings.ts
+│   ├── IAmqpSettings.ts
+│   ├── IDatabaseSettings.ts
+│   ├── ILoggerSettings.ts
+│   ├── IModeSettings.ts
+│   ├── IPrometheusSettings.ts
+│   └── IWebSettings.ts
+├── transport/
+│   └── amqp/              # AMQP транспорт
+│       ├── TransportAmqp.ts
+│       ├── TransportAmqpRequestPayload.ts
+│       ├── TransportAmqpResponsePayload.ts
+│       └── TransportAmqpEventPayload.ts
+└── public-api.ts          # Точка входа (экспорты)
+```
+
+## 🔄 Dual Module Support
+
+Библиотека поддерживает как ESM, так и CommonJS:
+
+```json
+{
+    "main": "./cjs/public-api.js",
+    "module": "./esm/public-api.js",
+    "exports": {
+        ".": {
+            "import": "./esm/public-api.js",
+            "require": "./cjs/public-api.js"
+        }
+    }
+}
+```
 
 ## 📄 Лицензия
 
