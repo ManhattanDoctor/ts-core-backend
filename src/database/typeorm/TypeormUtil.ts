@@ -129,6 +129,19 @@ export class TypeormUtil {
                 property = `LOWER(${property})`;
                 conditionKey = `LOWER(${conditionKey})`;
                 break;
+            case FilterableConditionType.INCLUDES_ALL:
+            case FilterableConditionType.INCLUDES_ONE_OF:
+                if (_.isArray(value.value) && !_.isEmpty(value.value)) {
+                    let item = _.first(value.value);
+                    if (_.isNumber(item) || typeof item === 'bigint') {
+                        conditionKey += '::numeric[]';
+                    } else if (_.isBoolean(item)) {
+                        conditionKey += '::boolean[]';
+                    } else {
+                        conditionKey += '::varchar[]';
+                    }
+                }
+                break;
             case FilterableConditionType.NULL:
             case FilterableConditionType.NOT_NULL:
                 parameters = null;
@@ -144,6 +157,7 @@ export class TypeormUtil {
         switch (value.union) {
             case FilterableConditionUnion.OR:
                 query.orWhere(where, parameters);
+                break;
             default:
                 query.andWhere(where, parameters);
         }
