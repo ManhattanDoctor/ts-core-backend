@@ -8,6 +8,7 @@ node_modules/
 *.code-workspace
 
 # bundle
+.claude
 dist/**/*
 src/**/*.d.ts
 src/**/*.js
