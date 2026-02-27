@@ -15,7 +15,7 @@ import {
     FilterableConditionUnion
 } from '@ts-core/common';
 import { ValidatorOptions } from 'class-validator';
-import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual, DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder } from 'typeorm';
+import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual, DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder, WhereExpressionBuilder } from 'typeorm';
 import { format } from 'date-fns';
 import * as _ from 'lodash';
 import * as fs from 'fs';
@@ -93,7 +93,7 @@ export class TypeormUtil {
         return query;
     }
 
-    public static applyConditions<U, T>(query: SelectQueryBuilder<U>, conditions: FilterableConditions<T>, alias?: string): SelectQueryBuilder<U> {
+    public static applyConditions<U, T, Q extends SelectQueryBuilder<U> | WhereExpressionBuilder>(query: Q, conditions: FilterableConditions<T>, alias?: string): Q {
         if (_.isNil(conditions)) {
             return query;
         }
@@ -103,12 +103,12 @@ export class TypeormUtil {
         return query;
     }
 
-    public static applyCondition<U, T>(query: SelectQueryBuilder<U>, name: keyof T, value: IFilterableConditionValue<T> | IFilterableCondition<T>, alias?: string, key?: string): SelectQueryBuilder<U> {
+    public static applyCondition<U, T, Q extends SelectQueryBuilder<U> | WhereExpressionBuilder>(query: Q, name: keyof T, value: IFilterableConditionValue<T> | IFilterableCondition<T>, alias?: string, key?: string): Q {
         if (_.isEmpty(name) || _.isNil(value)) {
             return query;
         }
 
-        if (_.isEmpty(alias)) {
+        if (_.isEmpty(alias) && query instanceof SelectQueryBuilder) {
             alias = query.alias;
         }
         if (_.isEmpty(key)) {
@@ -131,15 +131,16 @@ export class TypeormUtil {
                 break;
             case FilterableConditionType.INCLUDES_ALL:
             case FilterableConditionType.INCLUDES_ONE_OF:
-                if (_.isArray(value.value) && !_.isEmpty(value.value)) {
-                    let item = _.first(value.value);
-                    if (_.isNumber(item) || typeof item === 'bigint') {
-                        conditionKey += '::numeric[]';
-                    } else if (_.isBoolean(item)) {
-                        conditionKey += '::boolean[]';
-                    } else {
-                        conditionKey += '::varchar[]';
-                    }
+                if (!_.isArray(value.value) || _.isEmpty(value.value)) {
+                    return query;
+                }
+                let item = _.first(value.value);
+                if (_.isNumber(item) || typeof item === 'bigint') {
+                    conditionKey += '::numeric[]';
+                } else if (_.isBoolean(item)) {
+                    conditionKey += '::boolean[]';
+                } else {
+                    conditionKey += '::varchar[]';
                 }
                 break;
             case FilterableConditionType.NULL:
