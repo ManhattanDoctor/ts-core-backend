@@ -16,7 +16,7 @@ import {
     FilterableDataType
 } from '@ts-core/common';
 import { ValidatorOptions } from 'class-validator';
-import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual, DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder, WhereExpressionBuilder, QueryBuilder, ObjectLiteral } from 'typeorm';
+import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual, DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder, WhereExpressionBuilder, QueryBuilder, ObjectLiteral, Brackets } from 'typeorm';
 import { format } from 'date-fns';
 import * as _ from 'lodash';
 import * as fs from 'fs';
@@ -88,9 +88,7 @@ export class TypeormUtil {
         if (_.isEmpty(alias)) {
             alias = query.alias;
         }
-        for (let key of Object.keys(sort)) {
-            query.addOrderBy(`${alias}.${key}`, sort[key] ? 'ASC' : 'DESC', 'NULLS LAST');
-        }
+        Object.keys(sort).forEach(key => query.addOrderBy(`${alias}.${TypeormUtil.resolveColumnName(query, key, alias)}`, sort[key] ? 'ASC' : 'DESC', 'NULLS LAST'));
         return query;
     }
 
@@ -98,8 +96,19 @@ export class TypeormUtil {
         if (_.isNil(conditions)) {
             return query;
         }
-        for (let key of Object.keys(conditions)) {
-            TypeormUtil.applyCondition(query, key, conditions[key], alias, key);
+
+        let orKeys: Array<string> = new Array();
+        Object.keys(conditions).forEach(key => {
+            let value = conditions[key];
+            if (IsFilterableCondition(value) && value.union === FilterableConditionUnion.OR) {
+                orKeys.push(key);
+            } else {
+                TypeormUtil.applyCondition(query, key, value, alias, key);
+            }
+        });
+
+        if (!_.isEmpty(orKeys)) {
+            query.andWhere(new Brackets(builder => orKeys.forEach(key => TypeormUtil.applyCondition(builder, TypeormUtil.resolveColumnName(query, key, alias), conditions[key], alias, key))));
         }
         return query;
     }
@@ -116,7 +125,7 @@ export class TypeormUtil {
             key = name.toString();
         }
 
-        let property = `${alias}.${name.toString()}`;
+        let property = `${alias}.${TypeormUtil.resolveColumnName(query, name.toString(), alias)}`;
         let conditionKey = `:${key}`;
 
         if (!IsFilterableCondition(value)) {
@@ -204,6 +213,21 @@ export class TypeormUtil {
     //  Private Methods
     //
     // --------------------------------------------------------------------------
+
+    protected static resolveColumnName<U>(query: SelectQueryBuilder<U> | WhereExpressionBuilder, name: string, alias?: string): string {
+        if (!(query instanceof QueryBuilder)) {
+            return name;
+        }
+        let metadata = query.expressionMap?.mainAlias?.metadata;
+        if (!_.isNil(alias) && alias !== query.alias) {
+            let found = query.expressionMap.aliases.find(item => item.name === alias);
+            if (!_.isNil(found?.metadata)) {
+                metadata = found.metadata;
+            }
+        }
+        let column = metadata?.findColumnWithPropertyName(name);
+        return !_.isNil(column) ? column.databaseName : name;
+    }
 
     protected static toJsonProperty<T>(property: string, value: IFilterableCondition<T>): string {
         let parts = value.path.split('.');
