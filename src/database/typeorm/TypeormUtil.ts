@@ -16,7 +16,7 @@ import {
     FilterableDataType
 } from '@ts-core/common';
 import { ValidatorOptions } from 'class-validator';
-import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual, DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder, WhereExpressionBuilder } from 'typeorm';
+import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual, DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder, WhereExpressionBuilder, QueryBuilder, ObjectLiteral } from 'typeorm';
 import { format } from 'date-fns';
 import * as _ from 'lodash';
 import * as fs from 'fs';
@@ -109,7 +109,7 @@ export class TypeormUtil {
             return query;
         }
 
-        if (_.isEmpty(alias) && query instanceof SelectQueryBuilder) {
+        if (_.isEmpty(alias) && query instanceof QueryBuilder) {
             alias = query.alias;
         }
         if (_.isEmpty(key)) {
@@ -120,20 +120,12 @@ export class TypeormUtil {
         let conditionKey = `:${key}`;
 
         if (!IsFilterableCondition(value)) {
-            query.andWhere(`${property} ${!_.isArray(value) ? `= ${conditionKey}` : `IN (:...${key})`}`, { [key]: value });
-            return query;
+            return query.andWhere(`${property} ${!_.isArray(value) ? `= ${conditionKey}` : `IN (:...${key})`}`, { [key]: value }) as Q;
         }
-
         if (!_.isEmpty(value.path)) {
             property = TypeormUtil.toJsonProperty(property, value);
         }
-
-        let result = TypeormUtil.toCondition(property, conditionKey, key, value);
-        if (_.isNil(result)) {
-            return query;
-        }
-        TypeormUtil.addWhere(query, result.where, result.parameters, value.union);
-        return query;
+        return TypeormUtil.addWhere(query, TypeormUtil.toCondition(property, conditionKey, key, value));
     }
 
     public static async toPagination<U, V, T>(query: SelectQueryBuilder<U>, params: IPaginable<T>, transform: (item: U) => Promise<V>, isApplyFilterProperties: boolean = true): Promise<IPagination<V>> {
@@ -213,7 +205,7 @@ export class TypeormUtil {
     //
     // --------------------------------------------------------------------------
 
-    private static toJsonProperty<T>(property: string, value: IFilterableCondition<T>): string {
+    protected static toJsonProperty<T>(property: string, value: IFilterableCondition<T>): string {
         let parts = value.path.split('.');
         let isIncludes = value.condition === FilterableConditionType.INCLUDES_ALL || value.condition === FilterableConditionType.INCLUDES_ONE_OF;
         if (parts.length === 1) {
@@ -238,7 +230,7 @@ export class TypeormUtil {
         return property;
     }
 
-    private static toCondition<T>(property: string, conditionKey: string, key: string, value: IFilterableCondition<T>): { where: string, parameters: any } | null {
+    protected static toCondition<T>(property: string, conditionKey: string, key: string, value: IFilterableCondition<T>): ITypeormWhere | null {
         let parameters = { [key]: value.value };
         switch (value.condition) {
             case FilterableConditionType.CONTAINS:
@@ -275,20 +267,33 @@ export class TypeormUtil {
         if (!_.isEmpty(conditionKey)) {
             where += ` ${conditionKey}`;
         }
-        return { where, parameters };
+        return { where, parameters, union: value.union };
     }
 
-    private static addWhere<U, Q extends SelectQueryBuilder<U> | WhereExpressionBuilder>(query: Q, where: string, parameters: any, union?: FilterableConditionUnion): void {
-        if (union === FilterableConditionUnion.OR) {
-            query.orWhere(where, parameters);
-        } else {
-            query.andWhere(where, parameters);
+    protected static addWhere<U, Q extends SelectQueryBuilder<U> | WhereExpressionBuilder>(query: Q, where?: ITypeormWhere): Q {
+        if (_.isNil(where)) {
+            return query;
         }
+        switch (where.union) {
+            case FilterableConditionUnion.OR:
+                query.orWhere(where.where, where.parameters);
+                break;
+            default:
+                query.andWhere(where.where, where.parameters);
+                break;
+        }
+        return query;
     }
 
-    private static isErrorCode(error: any, code: any): boolean {
+    protected static isErrorCode(error: any, code: any): boolean {
         return error?.code === code;
     }
+}
+
+export interface ITypeormWhere {
+    where: string;
+    union?: FilterableConditionUnion;
+    parameters?: ObjectLiteral;
 }
 
 export const MoreThanDate = (date: Date, type: TypeormDateFormat) => MoreThan(format(date, type));
