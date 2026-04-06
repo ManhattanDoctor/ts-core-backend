@@ -12,7 +12,8 @@ import {
     IFilterableCondition,
     IFilterableConditionValue,
     IFilterableProperties,
-    FilterableConditionUnion
+    FilterableConditionUnion,
+    FilterableDataType
 } from '@ts-core/common';
 import { ValidatorOptions } from 'class-validator';
 import { MoreThan, MoreThanOrEqual, LessThan, LessThanOrEqual, DataSource, DataSourceOptions, QueryFailedError, SelectQueryBuilder, WhereExpressionBuilder } from 'typeorm';
@@ -123,45 +124,15 @@ export class TypeormUtil {
             return query;
         }
 
-        let parameters = { [key]: value.value };
-        switch (value.condition) {
-            case FilterableConditionType.CONTAINS:
-                property = `LOWER(${property})`;
-                conditionKey = `LOWER(${conditionKey})`;
-                break;
-            case FilterableConditionType.INCLUDES_ALL:
-            case FilterableConditionType.INCLUDES_ONE_OF:
-                if (!_.isArray(value.value) || _.isEmpty(value.value)) {
-                    return query;
-                }
-                let item = _.first(value.value);
-                if (_.isNumber(item) || typeof item === 'bigint') {
-                    conditionKey += '::numeric[]';
-                } else if (_.isBoolean(item)) {
-                    conditionKey += '::boolean[]';
-                } else {
-                    conditionKey += '::varchar[]';
-                }
-                break;
-            case FilterableConditionType.NULL:
-            case FilterableConditionType.NOT_NULL:
-                parameters = null;
-                conditionKey = null;
-                break;
+        if (!_.isEmpty(value.path)) {
+            property = TypeormUtil.toJsonProperty(property, value);
         }
 
-        let condition = TypeormUtil.getCondition(value.condition);
-        let where = `${property} ${condition}`;
-        if (!_.isEmpty(conditionKey)) {
-            where += ` ${conditionKey}`;
+        let result = TypeormUtil.toCondition(property, conditionKey, key, value);
+        if (_.isNil(result)) {
+            return query;
         }
-        switch (value.union) {
-            case FilterableConditionUnion.OR:
-                query.orWhere(where, parameters);
-                break;
-            default:
-                query.andWhere(where, parameters);
-        }
+        TypeormUtil.addWhere(query, result.where, result.parameters, value.union);
         return query;
     }
 
@@ -242,6 +213,79 @@ export class TypeormUtil {
     //
     // --------------------------------------------------------------------------
 
+    private static toJsonProperty<T>(property: string, value: IFilterableCondition<T>): string {
+        let parts = value.path.split('.');
+        let isIncludes = value.condition === FilterableConditionType.INCLUDES_ALL || value.condition === FilterableConditionType.INCLUDES_ONE_OF;
+        if (parts.length === 1) {
+            property = `${property}->${isIncludes ? '' : '>'}'${parts[0]}'`;
+        } else {
+            property = `${property}#>${isIncludes ? '' : '>'}'{${parts.join(',')}}'`;
+        }
+        if (isIncludes) {
+            return property;
+        }
+        switch (value.type) {
+            case FilterableDataType.NUMBER:
+                property = `(${property})::numeric`;
+                break;
+            case FilterableDataType.DATE:
+                property = `(${property})::timestamp`;
+                break;
+            case FilterableDataType.BOOLEAN:
+                property = `(${property})::boolean`;
+                break;
+        }
+        return property;
+    }
+
+    private static toCondition<T>(property: string, conditionKey: string, key: string, value: IFilterableCondition<T>): { where: string, parameters: any } | null {
+        let parameters = { [key]: value.value };
+        switch (value.condition) {
+            case FilterableConditionType.CONTAINS:
+                property = `LOWER(${property})`;
+                conditionKey = `LOWER(${conditionKey})`;
+                break;
+            case FilterableConditionType.INCLUDES_ALL:
+            case FilterableConditionType.INCLUDES_ONE_OF:
+                if (!_.isArray(value.value) || _.isEmpty(value.value)) {
+                    return null;
+                }
+                if (!_.isEmpty(value.path)) {
+                    conditionKey += '::jsonb';
+                    parameters[key] = JSON.stringify(value.value);
+                } else {
+                    let item = _.first(value.value as Array<any>);
+                    if (_.isNumber(item) || typeof item === 'bigint') {
+                        conditionKey += '::numeric[]';
+                    } else if (_.isBoolean(item)) {
+                        conditionKey += '::boolean[]';
+                    } else {
+                        conditionKey += '::varchar[]';
+                    }
+                }
+                break;
+            case FilterableConditionType.NULL:
+            case FilterableConditionType.NOT_NULL:
+                parameters = null;
+                conditionKey = null;
+                break;
+        }
+
+        let where = `${property} ${TypeormUtil.getCondition(value.condition)}`;
+        if (!_.isEmpty(conditionKey)) {
+            where += ` ${conditionKey}`;
+        }
+        return { where, parameters };
+    }
+
+    private static addWhere<U, Q extends SelectQueryBuilder<U> | WhereExpressionBuilder>(query: Q, where: string, parameters: any, union?: FilterableConditionUnion): void {
+        if (union === FilterableConditionUnion.OR) {
+            query.orWhere(where, parameters);
+        } else {
+            query.andWhere(where, parameters);
+        }
+    }
+
     private static isErrorCode(error: any, code: any): boolean {
         return error?.code === code;
     }
@@ -254,7 +298,7 @@ export const LessThanOrEqualDate = (date: Date, type: TypeormDateFormat) => Less
 
 export enum TypeormDateFormat {
     DATE = 'yyyy-MM-dd',
-    DATE_TIME = 'yyyy-MM-dd HH:MM:ss'
+    DATE_TIME = 'yyyy-MM-dd HH:mm:ss'
 }
 
 export enum TypeormPostgreError {
