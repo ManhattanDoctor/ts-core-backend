@@ -108,7 +108,7 @@ export class TypeormUtil {
         });
 
         if (!_.isEmpty(orKeys)) {
-            query.andWhere(new Brackets(builder => orKeys.forEach(key => TypeormUtil.applyCondition(builder, TypeormUtil.resolveColumnName(query, key, alias), conditions[key], alias, key))));
+            TypeormUtil.applyOrConditions(query, conditions, orKeys, alias);
         }
         return query;
     }
@@ -214,6 +214,10 @@ export class TypeormUtil {
     //
     // --------------------------------------------------------------------------
 
+    protected static applyOrConditions<U, T, Q extends SelectQueryBuilder<U> | WhereExpressionBuilder>(query: Q, conditions: FilterableConditions<T>, orKeys: Array<string>, alias?: string): void {
+        query.andWhere(new Brackets(builder => orKeys.forEach(key => TypeormUtil.applyCondition(builder, TypeormUtil.resolveColumnName(query, key, alias), conditions[key], alias, key))));
+    }
+
     protected static resolveColumnName<U>(query: SelectQueryBuilder<U> | WhereExpressionBuilder, name: string, alias?: string): string {
         if (!(query instanceof QueryBuilder)) {
             return name;
@@ -267,6 +271,10 @@ export class TypeormUtil {
                     return null;
                 }
                 if (!_.isEmpty(value.path)) {
+                    if (value.condition === FilterableConditionType.INCLUDES_ONE_OF) {
+                        let where = `ARRAY(SELECT jsonb_array_elements_text(${property})) && ${conditionKey}::text[]`;
+                        return { where, parameters, union: value.union };
+                    }
                     conditionKey += '::jsonb';
                     parameters[key] = JSON.stringify(value.value);
                 } else {
