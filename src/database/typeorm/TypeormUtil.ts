@@ -234,6 +234,9 @@ export class TypeormUtil {
     }
 
     protected static toJsonProperty<T>(property: string, value: IFilterableCondition<T>): string {
+        if (!/^[\w.]+$/.test(value.path)) {
+            throw new ExtendedError(`Invalid JSON path: ${value.path}`);
+        }
         let parts = value.path.split('.');
         let isIncludes = value.condition === FilterableConditionType.INCLUDES_ALL || value.condition === FilterableConditionType.INCLUDES_ONE_OF;
         if (parts.length === 1) {
@@ -270,22 +273,21 @@ export class TypeormUtil {
                 if (!_.isArray(value.value) || _.isEmpty(value.value)) {
                     return null;
                 }
+                let item = _.first(value.value);
+                let cast = _.isNumber(item) || typeof item === 'bigint' ? 'numeric' : _.isBoolean(item) ? 'boolean' : 'text';
                 if (!_.isEmpty(value.path)) {
                     if (value.condition === FilterableConditionType.INCLUDES_ONE_OF) {
-                        let where = `ARRAY(SELECT jsonb_array_elements_text(${property})) && ${conditionKey}::text[]`;
+                        let extract = `jsonb_array_elements_text(${property})`;
+                        if (cast !== 'text') {
+                            extract = `(${extract})::${cast}`;
+                        }
+                        let where = `ARRAY(SELECT ${extract}) && ${conditionKey}::${cast}[]`;
                         return { where, parameters, union: value.union };
                     }
                     conditionKey += '::jsonb';
                     parameters[key] = JSON.stringify(value.value);
                 } else {
-                    let item = _.first(value.value as Array<any>);
-                    if (_.isNumber(item) || typeof item === 'bigint') {
-                        conditionKey += '::numeric[]';
-                    } else if (_.isBoolean(item)) {
-                        conditionKey += '::boolean[]';
-                    } else {
-                        conditionKey += '::varchar[]';
-                    }
+                    conditionKey += `::${cast}[]`;
                 }
                 break;
             case FilterableConditionType.NULL:
