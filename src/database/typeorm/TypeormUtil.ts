@@ -219,6 +219,9 @@ export class TypeormUtil {
     }
 
     protected static resolveColumnName<U>(query: SelectQueryBuilder<U> | WhereExpressionBuilder, name: string, alias?: string): string {
+        if (!/^\w+$/.test(name)) {
+            throw new ExtendedError(`Invalid column name: ${name}`);
+        }
         if (!(query instanceof QueryBuilder)) {
             return name;
         }
@@ -238,12 +241,9 @@ export class TypeormUtil {
             throw new ExtendedError(`Invalid JSON path: ${value.path}`);
         }
         let parts = value.path.split('.');
+        let isOnlyOne = parts.length === 1;
         let isIncludes = value.condition === FilterableConditionType.INCLUDES_ALL || value.condition === FilterableConditionType.INCLUDES_ONE_OF;
-        if (parts.length === 1) {
-            property = `${property}->${isIncludes ? '' : '>'}'${parts[0]}'`;
-        } else {
-            property = `${property}#>${isIncludes ? '' : '>'}'{${parts.join(',')}}'`;
-        }
+        property = `${property}${isOnlyOne ? '->' : '#>'}${isIncludes ? '' : '>'}${isOnlyOne ? `'${parts[0]}'` : `'{${parts.join(',')}}'`}`;
         if (isIncludes) {
             return property;
         }
@@ -275,15 +275,21 @@ export class TypeormUtil {
                 }
                 let item = _.first(value.value);
                 let cast = _.isNumber(item) || typeof item === 'bigint' ? 'numeric' : _.isBoolean(item) ? 'boolean' : 'text';
-                if (!_.isEmpty(value.path)) {
-                    if (value.condition === FilterableConditionType.INCLUDES_ONE_OF) {
-                        let extract = `jsonb_array_elements_text(${property})`;
-                        if (cast !== 'text') {
-                            extract = `(${extract})::${cast}`;
-                        }
-                        let where = `ARRAY(SELECT ${extract}) && ${conditionKey}::${cast}[]`;
-                        return { where, parameters, union: value.union };
+                let isJsonb = !_.isEmpty(value.path) || _.isObject(item);
+
+                if (value.condition === FilterableConditionType.INCLUDES_ONE_OF && isJsonb) {
+                    if (_.isObject(item)) {
+                        parameters[key] = JSON.stringify(value.value);
+                        return { where: `EXISTS (SELECT 1 FROM jsonb_array_elements(${property}) AS elem, jsonb_array_elements(${conditionKey}::jsonb) AS target WHERE elem = target)`, parameters, union: value.union };
                     }
+                    let extract = `jsonb_array_elements_text(${property})`;
+                    if (cast !== 'text') {
+                        extract = `(${extract})::${cast}`;
+                    }
+                    return { where: `ARRAY(SELECT ${extract}) && ${conditionKey}::${cast}[]`, parameters, union: value.union };
+                }
+
+                if (isJsonb) {
                     conditionKey += '::jsonb';
                     parameters[key] = JSON.stringify(value.value);
                 } else {
