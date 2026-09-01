@@ -1,7 +1,7 @@
 {
     "name": "@ts-core/backend",
     "version": "3.0.45",
-    "description": "Classes and utils for backend",
+    "description": "TypeScript library for building backend applications: TypeORM database layer, AMQP/RabbitMQ messaging, environment-based settings and microservice building blocks",
     "scripts": {},
     "author": {
         "name": "Renat Gubaev",
@@ -32,7 +32,17 @@
         "url": "git+https://github.com/ManhattanDoctor/ts-core-backend.git"
     },
     "keywords": [
-        "typescript"
+        "typescript",
+        "backend",
+        "nodejs",
+        "typeorm",
+        "database",
+        "amqp",
+        "rabbitmq",
+        "microservices",
+        "settings",
+        "environment",
+        "transport"
     ],
     "bugs": {
         "url": "https://github.com/ManhattanDoctor/ts-core-backend/issues"
