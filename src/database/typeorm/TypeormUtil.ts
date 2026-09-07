@@ -24,6 +24,48 @@ import * as fs from 'fs';
 export class TypeormUtil {
     // --------------------------------------------------------------------------
     //
+    //  Drop Properties
+    //
+    // --------------------------------------------------------------------------
+
+    // Отношения схемы, не принадлежащие расширениям. Партиции пропускаются: они уходят
+    // вместе с родительской таблицей
+    private static DROP_RELATIONS_QUERY = `
+        SELECT n.nspname AS schema, c.relname AS name, c.relkind AS kind
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = $1
+            AND c.relkind IN ('r', 'p', 'v', 'm', 'S')
+            AND NOT c.relispartition
+            AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_class'::regclass AND d.objid = c.oid AND d.deptype = 'e')
+    `;
+
+    // Перечисления и домены схемы: типы, созданные миграциями, но не отношения
+    private static DROP_TYPES_QUERY = `
+        SELECT n.nspname AS schema, t.typname AS name
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = $1
+            AND t.typtype IN ('e', 'd')
+            AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_type'::regclass AND d.objid = t.oid AND d.deptype = 'e')
+    `;
+
+    private static DROP_EXTENSIONS_QUERY = `SELECT extname FROM pg_extension WHERE extname <> 'plpgsql' ORDER BY extname`;
+
+    private static DROP_STATEMENTS: Record<string, string> = {
+        m: 'DROP MATERIALIZED VIEW IF EXISTS',
+        v: 'DROP VIEW IF EXISTS',
+        r: 'DROP TABLE IF EXISTS',
+        p: 'DROP TABLE IF EXISTS',
+        S: 'DROP SEQUENCE IF EXISTS'
+    };
+
+    // Порядок важен: сначала зависимые объекты, затем таблицы, затем самостоятельные
+    // последовательности — те, что принадлежат таблицам, уходят вместе с ними
+    private static DROP_KINDS = ['m', 'v', 'r', 'p', 'S'];
+
+    // --------------------------------------------------------------------------
+    //
     //  Constants
     //
     // --------------------------------------------------------------------------
@@ -171,8 +213,66 @@ export class TypeormUtil {
         }
     }
 
+    // Сброс схемы, переживающий расширения базы. Штатный `synchronize(true)` и `schema:drop`
+    // зовут PostgresQueryRunner.clearDatabase, который сносит всё, что видит в pg_views
+    // и pg_tables текущей схемы, не различая объекты приложения и объекты расширений.
+    // На локальной базе это незаметно — расширений там нет, — а в облачном PostgreSQL
+    // расширения вроде pg_stat_statements включены принудительно, их view лежат в public,
+    // и сброс падает первым же DROP: «cannot drop view pg_stat_statements_info because
+    // extension pg_stat_statements requires it». Падает целиком, до единой правки.
+    //
+    // Здесь тот же сброс запросами к системному каталогу, но всё, что принадлежит расширению
+    // (pg_depend.deptype = 'e'), пропускается. Вместе с этим отпадает нужда в списках
+    // исключений вроде spatial_ref_sys и geography_columns у PostGIS: они принадлежат
+    // расширению, и общий фильтр накрывает их сам, как накроет и любое другое расширение.
+    //
+    // Границы: обрабатывается одна схема (объекты за её пределами не трогаются), нужны права
+    // владельца на удаляемые объекты, а CASCADE может утащить зависимые объекты из других
+    // схем — ровно как и у штатного сброса
+    public static async databaseDrop(data: DataSource, options?: ITypeormDatabaseDropOptions): Promise<ITypeormDatabaseDropResult> {
+        if (data.options.type !== 'postgres') {
+            throw new ExtendedError(`Unable to drop database: "${data.options.type}" is not supported, postgres only`);
+        }
+        let runner = data.createQueryRunner();
+        await runner.connect();
+        await runner.startTransaction();
+        try {
+            let schema = options?.schema || data.options['schema'] || (await runner.query(`SELECT current_schema() AS name`))[0].name;
+
+            let relations = await runner.query(TypeormUtil.DROP_RELATIONS_QUERY, [schema]);
+            for (let kind of TypeormUtil.DROP_KINDS) {
+                for (let item of relations.filter(item => item.kind === kind)) {
+                    await runner.query(`${TypeormUtil.DROP_STATEMENTS[kind]} "${item.schema}"."${item.name}" CASCADE`);
+                }
+            }
+
+            let types = await runner.query(TypeormUtil.DROP_TYPES_QUERY, [schema]);
+            for (let item of types) {
+                await runner.query(`DROP TYPE IF EXISTS "${item.schema}"."${item.name}" CASCADE`);
+            }
+            await runner.commitTransaction();
+
+            let extensions = (await runner.query(TypeormUtil.DROP_EXTENSIONS_QUERY)).map(item => item.extname);
+            return { schema, relations: relations.length, types: types.length, extensions };
+        }
+        catch (error) {
+            await runner.rollbackTransaction();
+            throw error;
+        }
+        finally {
+            await runner.release();
+        }
+    }
+
+    // Очистка базы: снести схему и создать её заново по сущностям. У postgres сброс идёт
+    // через databaseDrop — иначе база с включённым расширением не очищается вовсе
     public static async databaseClear(data: DataSource): Promise<void> {
-        await data.synchronize(true);
+        if (data.options.type !== 'postgres') {
+            await data.synchronize(true);
+            return;
+        }
+        await TypeormUtil.databaseDrop(data);
+        await data.synchronize(false);
     }
 
     public static isEntityId(id: any): boolean {
@@ -328,6 +428,20 @@ export class TypeormUtil {
     protected static isErrorCode(error: any, code: any): boolean {
         return error?.code === code;
     }
+}
+
+export interface ITypeormDatabaseDropOptions {
+    // Схема, которую сбрасываем. По умолчанию — схема из настроек источника, а если её там
+    // нет — current_schema()
+    schema?: string;
+}
+
+export interface ITypeormDatabaseDropResult {
+    schema: string;
+    relations: number;
+    types: number;
+    // Расширения, оставленные нетронутыми: полезно показать в логе того, кто звал сброс
+    extensions: Array<string>;
 }
 
 export interface ITypeormWhere {
