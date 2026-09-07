@@ -394,7 +394,7 @@ export class TypeormUtil {
                 if (value.condition === FilterableConditionType.INCLUDES_ONE_OF && isJsonb) {
                     if (_.isObject(item)) {
                         parameters[key] = JSON.stringify(value.value);
-                        return { where: `EXISTS (SELECT 1 FROM jsonb_array_elements(${property}) AS elem, jsonb_array_elements(${conditionKey}::jsonb) AS target WHERE elem = target)`, parameters, union: value.union };
+                        return { where: `EXISTS (SELECT 1 FROM jsonb_array_elements(${property}) AS elem, jsonb_array_elements(${conditionKey}::jsonb) AS target WHERE elem @> target)`, parameters, union: value.union };
                     }
                     let extract = `jsonb_array_elements_text(${property})`;
                     if (cast !== 'text') {
