@@ -130,7 +130,15 @@ export class TypeormUtil {
         if (_.isEmpty(alias)) {
             alias = query.alias;
         }
-        Object.keys(sort).forEach(key => query.addOrderBy(`${alias}.${TypeormUtil.resolveColumnName(query, key, alias)}`, sort[key] ? 'ASC' : 'DESC', 'NULLS LAST'));
+        // Сортировка задаётся именем свойства, а не колонки: TypeORM сопоставит его сам,
+        // и при пагинации с присоединениями ему нужно именно свойство — по имени колонки
+        // он не находит метаданные и падает в createOrderByCombinedWithSelectExpression.
+        // Имя всё равно проверяется: до запроса не должно доходить ничего, кроме простого
+        // идентификатора
+        Object.keys(sort).forEach(key => {
+            TypeormUtil.validateColumnName(key);
+            query.addOrderBy(`${alias}.${key}`, sort[key] ? 'ASC' : 'DESC', 'NULLS LAST');
+        });
         return query;
     }
 
@@ -318,10 +326,16 @@ export class TypeormUtil {
         query.andWhere(new Brackets(builder => orKeys.forEach(key => TypeormUtil.applyCondition(builder, TypeormUtil.resolveColumnName(query, key, alias), conditions[key], alias, key))));
     }
 
-    protected static resolveColumnName<U>(query: SelectQueryBuilder<U> | WhereExpressionBuilder, name: string, alias?: string): string {
+    // Условие уходит в SQL строкой, поэтому имя обязано быть простым идентификатором:
+    // всё остальное — попытка подмешать выражение
+    protected static validateColumnName(name: string): void {
         if (!/^\w+$/.test(name)) {
             throw new ExtendedError(`Invalid column name: ${name}`);
         }
+    }
+
+    protected static resolveColumnName<U>(query: SelectQueryBuilder<U> | WhereExpressionBuilder, name: string, alias?: string): string {
+        TypeormUtil.validateColumnName(name);
         if (!(query instanceof QueryBuilder)) {
             return name;
         }
